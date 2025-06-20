@@ -30,9 +30,14 @@ export default function Navbar() {
           <Info className="w-4 h-4" />
           Info
         </li>
-        <li className="flex items-center gap-1 hover:text-white cursor-pointer">
-          <LogIn className="w-4 h-4" />
-          Login
+        <li>
+          <a
+            href="/login"
+            className="flex items-center gap-1 hover:text-white transition"
+          >
+            <LogIn className="w-4 h-4" />
+            Login
+          </a>
         </li>
       </ul>
     </nav>
