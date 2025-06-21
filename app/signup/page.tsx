@@ -15,9 +15,11 @@ export default function SignupPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
+    const username = form.username.value;
     const email = form.email.value;
     const password = form.password.value;
-    const success = signup(email, password);
+
+    const success = signup(email, password, username);
     if (!success) {
       setError("An account with that email already exists.");
     } else {
@@ -45,6 +47,13 @@ export default function SignupPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              name="username"
+              type="text"
+              placeholder="Username"
+              className="w-full bg-zinc-800 border border-zinc-700 px-4 py-2 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              required
+            />
             <input
               name="email"
               type="email"
