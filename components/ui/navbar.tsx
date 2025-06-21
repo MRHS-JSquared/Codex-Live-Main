@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/lib/AuthContext";
 import Link from "next/link";
-import { Home, Trophy, Terminal, Info, LogIn, UserPlus, LogOut } from "lucide-react";
+import { Home, Trophy, Users, Info, LogIn, UserPlus, LogOut } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -26,9 +26,9 @@ export default function Navbar() {
           </Link>
         </li>
         <li>
-          <Link href="/challenges" className="flex items-center gap-1 hover:text-white transition">
-            <Terminal className="w-4 h-4" />
-            Challenges
+          <Link href="/team" className="flex items-center gap-1 hover:text-white transition">
+            <Users className="w-4 h-4" />
+            Team
           </Link>
         </li>
         <li>

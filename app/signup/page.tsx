@@ -23,7 +23,7 @@ export default function SignupPage() {
     if (!success) {
       setError("An account with that email already exists.");
     } else {
-      router.push("/");
+      router.push("/team");
     }
   };
 
