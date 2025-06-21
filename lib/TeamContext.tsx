@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 
 //Updates user database with new team
@@ -39,6 +39,7 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
 
   // On mount, try to load team from localStorage if the user has one
   useEffect(() => {
+    if (!user) setTeam(null);
     if (!user?.teamCode) return;
 
     const teams: Team[] = JSON.parse(localStorage.getItem("codex-teams") || "[]");

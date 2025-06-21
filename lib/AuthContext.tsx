@@ -68,7 +68,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Logout: remove the session and clear state
   const logout = () => {
     localStorage.removeItem("codex-user");
-    localStorage.removeItem("codex-user-team")
     setUser(null);
   };
 
