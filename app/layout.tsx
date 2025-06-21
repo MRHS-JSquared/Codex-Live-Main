@@ -1,9 +1,8 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import { TeamProvider } from '@/lib/TeamContext';
-import { ReactNode } from 'react';
+import { AuthProvider } from '@/lib/AuthContext';
+import { TeamProvider } from '@/lib/TeamContext'; // ✅ import
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -11,16 +10,6 @@ export const metadata: Metadata = {
   title: 'CodeX',
   description: 'The ultimate competitive programming platform.',
 };
-
-function Providers({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-
-  if (user === undefined) {
-    return null; 
-  }
-
-  return <TeamProvider>{children}</TeamProvider>;
-}
 
 export default function RootLayout({
   children,
@@ -31,7 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
-          <Providers>{children}</Providers>
+          <TeamProvider>{children}</TeamProvider> {/* ✅ wrap */}
         </AuthProvider>
       </body>
     </html>
