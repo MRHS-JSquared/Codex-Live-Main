@@ -6,8 +6,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/ui/navbar";
 
-export default function LoginPage() {
-  const { login, user } = useAuth();
+export default function SignupPage() {
+  const { signup, user } = useAuth();
   const router = useRouter();
   const [error, setError] = useState("");
 
@@ -16,9 +16,9 @@ export default function LoginPage() {
     const form = e.target as HTMLFormElement;
     const email = form.email.value;
     const password = form.password.value;
-    const success = login(email, password);
+    const success = signup(email, password);
     if (!success) {
-      setError("Invalid credentials.");
+      setError("An account with that email already exists.");
     } else {
       router.push("/");
     }
@@ -29,7 +29,7 @@ export default function LoginPage() {
       <Navbar />
 
       <section className="flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
-        <h1 className="text-4xl font-bold mb-4">Login</h1>
+        <h1 className="text-4xl font-bold mb-4">Sign Up</h1>
         <form
           onSubmit={handleSubmit}
           className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-sm space-y-4"
@@ -53,7 +53,7 @@ export default function LoginPage() {
             type="submit"
             className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
           >
-            Log In
+            Create Account
           </Button>
         </form>
       </section>

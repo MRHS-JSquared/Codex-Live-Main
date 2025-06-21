@@ -1,9 +1,12 @@
 'use client';
 
+import { useAuth } from "@/lib/AuthContext";
 import Link from "next/link";
-import { Home, Trophy, Terminal, Info, LogIn } from "lucide-react";
+import { Home, Trophy, Terminal, Info, LogIn, UserPlus, LogOut } from "lucide-react";
 
 export default function Navbar() {
+  const { user, logout } = useAuth();
+
   return (
     <nav className="flex justify-between items-center px-6 py-4 border-b border-zinc-800 bg-black">
       <div className="text-2xl font-bold">
@@ -11,50 +14,56 @@ export default function Navbar() {
       </div>
       <ul className="flex gap-6 items-center text-zinc-300 text-sm">
         <li>
-          <Link
-            href="/"
-            className="flex items-center gap-1 hover:text-white transition"
-          >
+          <Link href="/" className="flex items-center gap-1 hover:text-white transition">
             <Home className="w-4 h-4" />
             Home
           </Link>
         </li>
         <li>
-          <Link
-            href="/scoreboard"
-            className="flex items-center gap-1 hover:text-white transition"
-          >
+          <Link href="/scoreboard" className="flex items-center gap-1 hover:text-white transition">
             <Trophy className="w-4 h-4" />
             Scoreboard
           </Link>
         </li>
         <li>
-          <Link
-            href="/challenges"
-            className="flex items-center gap-1 hover:text-white transition"
-          >
+          <Link href="/challenges" className="flex items-center gap-1 hover:text-white transition">
             <Terminal className="w-4 h-4" />
             Challenges
           </Link>
         </li>
         <li>
-          <Link
-            href="/info"
-            className="flex items-center gap-1 hover:text-white transition"
-          >
+          <Link href="/info" className="flex items-center gap-1 hover:text-white transition">
             <Info className="w-4 h-4" />
             Info
           </Link>
         </li>
-        <li>
-          <Link
-            href="/login"
-            className="flex items-center gap-1 hover:text-white transition"
-          >
-            <LogIn className="w-4 h-4" />
-            Login
-          </Link>
-        </li>
+        {!user ? (
+          <>
+            <li>
+              <Link href="/login" className="flex items-center gap-1 hover:text-white transition">
+                <LogIn className="w-4 h-4" />
+                Login
+              </Link>
+            </li>
+            <li>
+              <Link href="/signup" className="flex items-center gap-1 hover:text-white transition">
+                <UserPlus className="w-4 h-4" />
+                Sign Up
+              </Link>
+            </li>
+          </>
+        ) : (
+          <>
+            <li className="text-blue-400">{user.email}</li>
+            <li
+              onClick={logout}
+              className="flex items-center gap-1 hover:text-white cursor-pointer transition"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </li>
+          </>
+        )}
       </ul>
     </nav>
   );
