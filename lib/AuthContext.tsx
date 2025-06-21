@@ -7,6 +7,7 @@ type User = {
   email: string;
   password: string;
   username: string;
+  teamCode?: string;
 };
 
 // Define what values and functions our AuthContext will provide
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (users.find(u => u.email === email)) return false;
 
     //Creates a new user
-    const newUser: User = { email, password, username };
+    const newUser: User = { email, password, username, teamCode: undefined };
 
     //Updates database and sets new user
     localStorage.setItem("codex-users", JSON.stringify([...users, newUser]));

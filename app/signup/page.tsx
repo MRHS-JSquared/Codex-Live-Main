@@ -19,6 +19,11 @@ export default function SignupPage() {
     const email = form.email.value;
     const password = form.password.value;
 
+    if (!(username && email && password)) {
+      setError("Please fill in all fields");
+      return;
+    }
+
     const success = signup(email, password, username);
     if (!success) {
       setError("An account with that email already exists.");

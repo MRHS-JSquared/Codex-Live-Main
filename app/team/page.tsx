@@ -3,8 +3,61 @@
 import Navbar from "@/components/ui/navbar";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useTeam } from "@/lib/TeamContext"
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function TeamPage() {
+  const { createTeam, joinTeam, team } = useTeam();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!user) router.push("/login");
+    else if (team) router.push("/team/dashboard");
+
+  }, [user, team, router]);
+
+  const handleSubmitCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const name = form.teamName.value.trim();
+    const difficulty = form.difficulty.value;
+
+    if (!(name && difficulty)) {
+        setError("Please fill in all fields.");
+        return;
+    }
+
+    const success = createTeam(name, difficulty);
+    if (!success) {
+        setError("Team with that name already exists")
+    } else {
+        router.push("/team/dashboard");
+    }
+  };
+
+  const handleSubmitJoin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const code = form.accessCode.value.trim();
+
+    if (!code) {
+        setError("Please enter a valid access code.");
+        return;
+    }
+
+    const success = joinTeam(code);
+    if (!success) {
+        setError("Code is invalid");
+    } else {
+        router.push("/team/dashboard");
+    }
+  };
+  
   return (
     <main className="bg-black text-white min-h-screen flex flex-col">
       <Navbar />
@@ -18,12 +71,17 @@ export default function TeamPage() {
         >
           Join or Create a Team
         </motion.h1>
-        <p className="text-zinc-400 mb-10 text-sm text-center">
+
+        <p className="text-zinc-400 mb-6 text-sm text-center">
           You need to be part of a team to participate in the competition
         </p>
 
+        {error && (
+          <p className="text-red-500 text-sm mb-6 text-center">{error}</p>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-          {/* Create Team */}
+          {/* Create Team Form */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -34,15 +92,17 @@ export default function TeamPage() {
             <p className="text-sm text-zinc-400 mb-6">
               Start your own team and become the leader
             </p>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmitCreate}>
               <input
                 type="text"
                 name="teamName"
                 placeholder="Team Name"
+                required
                 className="w-full bg-zinc-800 border border-zinc-700 px-4 py-2 rounded-md text-sm placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <select
                 name="difficulty"
+                required
                 className="w-full bg-zinc-800 border border-zinc-700 px-4 py-2 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 defaultValue=""
               >
@@ -58,7 +118,7 @@ export default function TeamPage() {
             </form>
           </motion.div>
 
-          {/* Join Team */}
+          {/* Join Team Form */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -69,11 +129,12 @@ export default function TeamPage() {
             <p className="text-sm text-zinc-400 mb-6">
               Enter the 6-character access code from your team leader
             </p>
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmitJoin}>
               <input
                 type="text"
                 name="accessCode"
                 placeholder="Access Code"
+                required
                 className="w-full bg-zinc-800 border border-zinc-700 px-4 py-2 rounded-md text-sm placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <Button className="w-full bg-zinc-100 text-black hover:bg-white rounded-md">

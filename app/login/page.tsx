@@ -17,6 +17,12 @@ export default function LoginPage() {
     const form = e.target as HTMLFormElement;
     const email = form.email.value;
     const password = form.password.value;
+
+    if (!(email && password)) {
+      setError("Please fill in all fields");
+      return;
+    }
+
     const success = login(email, password);
     if (!success) {
       setError("Invalid credentials.");
