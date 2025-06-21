@@ -3,9 +3,17 @@
 import { useAuth } from "@/lib/AuthContext";
 import Link from "next/link";
 import { Home, Trophy, Users, Info, LogIn, UserPlus, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation"
+
 
 export default function Navbar() {
+  const router = useRouter();
   const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  }
 
   return (
     <nav className="flex justify-between items-center px-6 py-4 border-b border-zinc-800 bg-black">
@@ -56,7 +64,7 @@ export default function Navbar() {
           <>
             <li className="text-blue-400">{user.email}</li>
             <li
-              onClick={logout}
+              onClick={handleLogout}
               className="flex items-center gap-1 hover:text-white cursor-pointer transition"
             >
               <LogOut className="w-4 h-4" />
