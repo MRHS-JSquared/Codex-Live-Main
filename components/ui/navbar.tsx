@@ -32,10 +32,10 @@ export default function Navbar() {
           </Link>
         </li>
         <li>
-          <Link href="/info" className="flex items-center gap-1 hover:text-white transition">
+          <a href="/info" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-white transition">
             <Info className="w-4 h-4" />
             Info
-          </Link>
+          </a>
         </li>
         {!user ? (
           <>
