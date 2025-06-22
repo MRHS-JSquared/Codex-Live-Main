@@ -20,7 +20,7 @@ export default function TeamPage() {
     if (!user) router.push("/login");
     else if (team) router.push("/team/dashboard");
 
-  }, [user, team, router]);
+  }, [user, team, loading, router]);
 
   const handleSubmitCreate = (e: React.FormEvent) => {
     e.preventDefault();
