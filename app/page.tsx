@@ -28,7 +28,7 @@ export default function HomePage() {
         </p>
 
         <Button className="mt-8 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 text-lg rounded-xl">
-          Join Competition
+          Join CodeX
         </Button>
       </section>
     </main>
