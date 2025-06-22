@@ -36,6 +36,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
+  if (loading) return <div className="text-white text-center py-12">Loading...</div>;
+
   // Login function: check if email/password match an existing user
   const login = (email: string, password: string): boolean => {
     //Looks through all users and find user with inputted info
