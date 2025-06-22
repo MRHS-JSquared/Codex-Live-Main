@@ -26,7 +26,7 @@ export default function TeamPage() {
     const difficulty = form.difficulty.value;
 
     if (!(name && difficulty)) {
-        setError("Please fill in all fields.");
+        setError("Please fill in all fields");
         return;
     }
 
@@ -44,7 +44,7 @@ export default function TeamPage() {
     const code = form.accessCode.value.trim();
 
     if (!code) {
-        setError("Please enter a valid access code.");
+        setError("Please fill in all fields");
         return;
     }
 
