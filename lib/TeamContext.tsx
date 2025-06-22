@@ -17,6 +17,7 @@ type Team = {
   name: string;
   difficulty: "beginner" | "advanced";
   code: string; // Unique team identifier
+  members: string[];
 };
 
 // Define the shape of what this context provides
@@ -39,12 +40,15 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
 
   // On mount, try to load team from localStorage if the user has one
   useEffect(() => {
-    if (!user) setTeam(null);
-    if (!user?.teamCode) return;
+    if (!user || !user.teamCode) {
+      setTeam(null);
+      return;
+    }
 
     const teams: Team[] = JSON.parse(localStorage.getItem("codex-teams") || "[]");
     const found = teams.find(t => t.code === user.teamCode);
     if (found) setTeam(found);
+    else setTeam(null);
   }, [user]);
 
   // Create a new team and assign it to the current user
@@ -52,7 +56,7 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return false;
 
     const code = generateCode();
-    const newTeam: Team = { name, difficulty, code };
+    const newTeam: Team = { name, difficulty, code, members: [user.email] };
 
     // Save new team to localStorage
     const existing: Team[] = JSON.parse(localStorage.getItem("codex-teams") || "[]");
@@ -76,16 +80,23 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return false;
 
     const teams: Team[] = JSON.parse(localStorage.getItem("codex-teams") || "[]");
-    const found = teams.find(t => t.code === code.toUpperCase());
-    if (!found) return false;
+    const index = teams.findIndex(t => t.code === code.toUpperCase());
+    if (index === -1) return false;
+
+    const team  = teams[index];
+    if (team.members.length >= 3) return false;
+    if (team.members.includes(user.email)) return true;
+
+    const updatedTeam = {...team, members:[...team.members, user.email]};
+    teams[index] = updatedTeam;
 
     // Assign teamCode to the user and save
-    const updatedUser = { ...user, teamCode: found.code };
+    const updatedUser = { ...user, teamCode: updatedTeam.code };
     localStorage.setItem("codex-user", JSON.stringify(updatedUser));
     updateUserInList(updatedUser);
 
 
-    setTeam(found);
+    setTeam(updatedTeam);
     return true;
   };
 
