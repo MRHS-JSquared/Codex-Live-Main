@@ -3,7 +3,7 @@
 import Navbar from "@/components/ui/navbar";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTeam } from "@/lib/TeamContext"
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -14,6 +14,11 @@ export default function TeamPage() {
   const router = useRouter();
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (!user) router.push("/login");
+    else if (team) router.push("/team/dashboard");
+  }, [user, team, router]);
+
   const handleSubmitCreate = (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
@@ -21,15 +26,15 @@ export default function TeamPage() {
     const difficulty = form.difficulty.value;
 
     if (!(name && difficulty)) {
-      setError("Please fill in all fields.");
-      return;
+        setError("Please fill in all fields.");
+        return;
     }
 
     const success = createTeam(name, difficulty);
     if (!success) {
-      setError("Team with that name already exists");
+        setError("Team with that name already exists")
     } else {
-      router.push("/team/dashboard");
+        router.push("/team/dashboard");
     }
   };
 
@@ -39,15 +44,15 @@ export default function TeamPage() {
     const code = form.accessCode.value.trim();
 
     if (!code) {
-      setError("Please enter a valid access code.");
-      return;
+        setError("Please enter a valid access code.");
+        return;
     }
 
     const success = joinTeam(code);
     if (!success) {
-      setError("Code is invalid");
+        setError("Code is invalid");
     } else {
-      router.push("/team/dashboard");
+        router.push("/team/dashboard");
     }
   };
 
