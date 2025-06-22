@@ -13,7 +13,6 @@ type User = {
 // Define what values and functions our AuthContext will provide
 type AuthContextType = {
   user: User | null;
-  loading: boolean;
   login: (email: string, password: string) => boolean;
   signup: (email: string, password: string, username: string) => boolean;
   logout: () => void;
@@ -25,7 +24,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // The AuthProvider wraps your whole app and manages the auth state
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
 
   // On app load, check if someone is already logged in and restore their session
   useEffect(() => {
@@ -33,10 +31,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
-    setLoading(false);
   }, []);
 
-  if (loading) return <div className="text-white text-center py-12">Loading...</div>;
 
   // Login function: check if email/password match an existing user
   const login = (email: string, password: string): boolean => {
@@ -78,7 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Provide the user state and auth functions to the rest of the app
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );
