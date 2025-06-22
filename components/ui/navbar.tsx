@@ -1,19 +1,30 @@
 'use client';
 
 import { useAuth } from "@/lib/AuthContext";
+import { useTeam } from "@/lib/TeamContext";
 import Link from "next/link";
-import { Home, Trophy, Users, Info, LogIn, UserPlus, LogOut } from "lucide-react";
-import { useRouter } from "next/navigation"
-
+import { useRouter } from "next/navigation";
+import {
+  Home,
+  Trophy,
+  Users,
+  Info,
+  LogIn,
+  UserPlus,
+  LogOut,
+  Code,
+  Rocket,
+} from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { team } = useTeam();
 
   const handleLogout = () => {
     logout();
     router.push("/");
-  }
+  };
 
   return (
     <nav className="flex justify-between items-center px-6 py-4 border-b border-zinc-800 bg-black">
@@ -39,12 +50,37 @@ export default function Navbar() {
             Team
           </Link>
         </li>
+
+        {/* Show only if user is in a team */}
+        {user && team && (
+          <>
+            <li>
+              <Link href="/problems" className="flex items-center gap-1 hover:text-white transition">
+                <Code className="w-4 h-4" />
+                Problems
+              </Link>
+            </li>
+            <li>
+              <Link href="/hackathon" className="flex items-center gap-1 hover:text-white transition">
+                <Rocket className="w-4 h-4" />
+                Hackathon
+              </Link>
+            </li>
+          </>
+        )}
+
         <li>
-          <a href="/info" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-white transition">
+          <a
+            href="/info"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 hover:text-white transition"
+          >
             <Info className="w-4 h-4" />
             Info
           </a>
         </li>
+
         {!user ? (
           <>
             <li>
