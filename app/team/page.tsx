@@ -10,13 +10,13 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function TeamPage() {
-  const { user/*, loading*/ } = useAuth();
+  const { user, loading } = useAuth();
   const { createTeam, joinTeam, team } = useTeam();
   const router = useRouter();
   const [error, setError] = useState("");
 
   useEffect(() => {
-    //if (loading) return;
+    if (loading) return;
     if (!user) router.push("/login");
     else if (team) router.push("/team/dashboard");
 
