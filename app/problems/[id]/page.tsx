@@ -15,7 +15,7 @@ const languageOptions: PistonLanguage[] = [
 export default function ProblemPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { team } = useTeam();
+  const { team, setTeam } = useTeam();
 
   const problemId = Number(id);
   const problem = problems.find(p => p.id === problemId);
@@ -57,7 +57,7 @@ export default function ProblemPage() {
         allCorrect = false;
         break;
       }
-      
+
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
@@ -85,7 +85,7 @@ export default function ProblemPage() {
         }));
 
         console.log("🎉 Problem solved! Awarded", pointsEarned, "points.");
-        location.reload();
+        setTeam(updatedTeam);
       } else {
         setFeedback("✅ Correct! Already solved.");
       }

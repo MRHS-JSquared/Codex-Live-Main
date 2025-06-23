@@ -29,6 +29,7 @@ type TeamContextType = {
   createTeam: (name: string, difficulty: "beginner" | "advanced") => boolean;
   joinTeam: (code: string) => boolean;
   markProblemSolved: (problemId: number, points: number) => void; // <== new
+  setTeam: React.Dispatch<React.SetStateAction<Team | null>>;
 };
 
 // Create the actual context
@@ -129,7 +130,7 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <TeamContext.Provider value={{ team, createTeam, joinTeam, markProblemSolved }}>
+    <TeamContext.Provider value={{ team, createTeam, joinTeam, markProblemSolved, setTeam }}>
       {children}
     </TeamContext.Provider>
   );
