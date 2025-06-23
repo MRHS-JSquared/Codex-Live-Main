@@ -1,14 +1,12 @@
-// app/problems/[id]/page.tsx
 'use client';
 
 import { useParams, useRouter } from "next/navigation";
 import { problems } from "@/lib/problems";
 import { useEffect, useState } from "react";
 import CodeEditor from "@/components/problem/CodeEditor";
-import { PistonLanguage } from "@/lib/piston";
+import { PistonLanguage, sendCodeToPiston } from "@/lib/piston";
 import { useTeam } from "@/lib/TeamContext";
 import Navbar from "@/components/ui/navbar";
-import { Button } from "@/components/ui/button";
 
 const languageOptions: PistonLanguage[] = [
   "python", "cpp", "java", "javascript", "rust", "csharp"
@@ -26,16 +24,27 @@ export default function ProblemPage() {
 
   useEffect(() => {
     if (!team) router.push("/team");
-    else if (problem?.difficulty === "hard" || problem?.difficulty === "extreme") {
-      if (team.difficulty === "beginner") router.push("/problems");
+    else if ((problem?.difficulty === "hard" || problem?.difficulty === "extreme") && team.difficulty === "beginner") {
+      router.push("/problems");
     }
   }, [team, problem, router]);
 
   if (!problem) return <div className="text-white p-6">Problem not found.</div>;
 
-  const handleResult = (output: string, success: boolean) => {
-    setFeedback(success ? "Correct! 🎉" : "Incorrect ❌");
-    // Logic for updating team context could be added here
+  const handleResult = async (output: string) => {
+    const expected = problem.examples[0].output.trim();
+    const actual = output.trim();
+
+    const success = actual === expected;
+    setFeedback(success ? "Correct! 🎉" : `Incorrect ❌\nExpected: ${expected}\nGot: ${actual}`);
+
+    // Optional: logic for updating team points and solved problems can go here
+  };
+
+  const handleSubmit = async (code: string) => {
+    const input = problem.examples[0].input;
+    const result = await sendCodeToPiston(language, code, input);
+    handleResult(result.output);
   };
 
   return (
@@ -82,11 +91,11 @@ export default function ProblemPage() {
         <CodeEditor
           language={language}
           starterCode={problem.starterCode?.[language] || ''}
-          onResult={handleResult}
+          onResult={handleSubmit}
         />
 
         {feedback && (
-          <div className="mt-4 text-sm font-semibold">
+          <div className="mt-4 text-sm font-semibold whitespace-pre-wrap">
             {feedback}
           </div>
         )}
