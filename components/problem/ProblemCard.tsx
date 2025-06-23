@@ -33,7 +33,7 @@ export default function ProblemCard({
     <motion.div
       whileHover={!disabled ? { scale: 1.02 } : {}}
       className={cn(
-        "relative p-4 border rounded-xl bg-zinc-900/80",
+        "relative p-5 border rounded-xl bg-zinc-900/80",
         disabled
           ? "opacity-30 pointer-events-none"
           : "hover:border-white transition duration-200 cursor-pointer",
@@ -42,14 +42,14 @@ export default function ProblemCard({
     >
       {/* Solved badge */}
       {solved && (
-        <div className="absolute top-2 right-2 text-green-500">
-          <CheckCircle className="w-5 h-5" />
+        <div className="absolute top-2 right-2">
+          <CheckCircle className="w-5 h-5 text-green-400 drop-shadow-sm" />
         </div>
       )}
 
       <Link href={link}>
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white">{title}</h3>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold text-white">{title}</h3>
           <span className="text-xs uppercase font-bold">{difficulty}</span>
         </div>
       </Link>
