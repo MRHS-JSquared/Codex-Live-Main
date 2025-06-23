@@ -64,6 +64,7 @@ export default function ProblemsPage() {
                 id={p.id}
                 title={p.title}
                 difficulty={p.difficulty}
+                solved={team?.solved.includes(p.id)}
               />
             ))}
           </div>
@@ -83,6 +84,7 @@ export default function ProblemsPage() {
                 id={p.id}
                 title={p.title}
                 difficulty={p.difficulty}
+                solved={team?.solved.includes(p.id)}
               />
             ))}
           </div>
@@ -103,6 +105,7 @@ export default function ProblemsPage() {
                 title={p.title}
                 difficulty={p.difficulty}
                 disabled={beginnerOnly}
+                solved={team?.solved.includes(p.id)}
               />
             ))}
           </div>
@@ -123,6 +126,7 @@ export default function ProblemsPage() {
                 title={p.title}
                 difficulty={p.difficulty}
                 disabled={beginnerOnly}
+                solved={team?.solved.includes(p.id)}
               />
             ))}
           </div>

@@ -1,9 +1,9 @@
-// components/ui/ProblemCard.tsx
 'use client';
 
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { CheckCircle } from "lucide-react";
 
 export type Difficulty = "easy" | "medium" | "hard" | "extreme";
 
@@ -19,11 +19,13 @@ export default function ProblemCard({
   title,
   difficulty,
   disabled,
+  solved,
 }: {
   id: number;
   title: string;
   difficulty: Difficulty;
   disabled?: boolean;
+  solved?: boolean;
 }) {
   const link = `/problems/${id}`;
 
@@ -31,19 +33,24 @@ export default function ProblemCard({
     <motion.div
       whileHover={!disabled ? { scale: 1.02 } : {}}
       className={cn(
-        "p-4 border rounded-xl bg-zinc-900/80",
+        "relative p-4 border rounded-xl bg-zinc-900/80",
         disabled
           ? "opacity-30 pointer-events-none"
           : "hover:border-white transition duration-200 cursor-pointer",
         difficultyColors[difficulty]
       )}
     >
+      {/* Solved badge */}
+      {solved && (
+        <div className="absolute top-2 right-2 text-green-500">
+          <CheckCircle className="w-5 h-5" />
+        </div>
+      )}
+
       <Link href={link}>
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-medium text-white">{title}</h3>
-          <span className="text-xs uppercase font-bold">
-            {difficulty}
-          </span>
+          <span className="text-xs uppercase font-bold">{difficulty}</span>
         </div>
       </Link>
     </motion.div>

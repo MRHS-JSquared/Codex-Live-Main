@@ -42,8 +42,14 @@ export default function TeamDashboard() {
               </span>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold">{team?.points[0]}</p>
+              <p className="text-2xl font-bold">
+              {(team?.points?.[0] ?? 0) + (team?.points?.[1] ?? 0)}
+              </p>
               <p className="text-sm text-zinc-400">Total Points</p>
+              <p className="text-xs text-zinc-500 mt-1">
+                🧠 Problems: <span className="text-white">{team?.points[0]}</span> &nbsp;|&nbsp;
+                🚀 Hackathon: <span className="text-white">{team?.points[1]}</span>
+              </p>
             </div>
           </div>
 
@@ -83,7 +89,7 @@ export default function TeamDashboard() {
                 {user.username} ({user.email})
               </li>
             )}
-            {/* You can map real team members here once member syncing is fully implemented */}
+            {/* Add full member list if desired */}
           </ul>
         </div>
       </section>
