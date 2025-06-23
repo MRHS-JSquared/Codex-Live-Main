@@ -8,6 +8,8 @@ import CodeEditor from "@/components/problem/CodeEditor";
 import { PistonLanguage, sendCodeToPiston } from "@/lib/piston";
 import { useTeam } from "@/lib/TeamContext";
 import Navbar from "@/components/ui/navbar";
+import { testCases } from "@/lib/testcases";
+import { Button } from "@/components/ui/button";
 
 const languageOptions: PistonLanguage[] = [
   "python", "cpp", "java", "javascript", "rust", "csharp"
@@ -20,34 +22,68 @@ export default function ProblemPage() {
 
   const [language, setLanguage] = useState<PistonLanguage>('python');
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [starterCode, setStarterCode] = useState<string>('');
+  const [code, setCode] = useState("");
 
-  const problem = problems.find(p => p.id === Number(id));
+  const problemId = Number(id);
+  const problem = problems.find(p => p.id === problemId);
 
   useEffect(() => {
     if (!team) router.push("/team");
-    else if ((problem?.difficulty === "hard" || problem?.difficulty === "extreme") && team.difficulty === "beginner") {
+    else if (
+      (problem?.difficulty === "hard" || problem?.difficulty === "extreme") &&
+      team.difficulty === "beginner"
+    ) {
       router.push("/problems");
     }
   }, [team, problem, router]);
 
-  useEffect(() => {
-    if (problem?.starterCode) {
-      setStarterCode(problem.starterCode[language] || '');
-    }
-  }, [language, problem]);
-
+  if (!team) return null; // Or loading spinner
   if (!problem) return <div className="text-white p-6">Problem not found.</div>;
 
-  const handleResult = async (code: string) => {
-    const input = problem.examples[0]?.input || "";
-    const expected = problem.examples[0]?.output.trim();
+  const handleSubmit = async () => {
+    if (!code.trim()) return setFeedback("Code is empty.");
 
-    const result = await sendCodeToPiston(language, code, input);
-    const output = result.output.trim();
+    const currentCases = testCases[problemId];
+    if (!currentCases) return setFeedback("No test cases found.");
 
-    const isCorrect = output === expected;
-    setFeedback(isCorrect ? "Correct! 🎉" : `Incorrect ❌\nOutput: ${output}`);
+    let passedAll = true;
+
+    for (const { input, output } of currentCases) {
+      const result = await sendCodeToPiston(language, code, input);
+
+      const cleanedOutput = result.output.trim().replace(/\r\n/g, "\n");
+      const expected = output.trim().replace(/\r\n/g, "\n");
+
+      if (cleanedOutput !== expected) {
+        passedAll = false;
+        break;
+      }
+    }
+
+    if (passedAll) {
+      // prevent duplicate solves
+      if (!team.solved.includes(problemId)) {
+        const points = problem.difficulty === "easy" ? 25 :
+                       problem.difficulty === "medium" ? 50 :
+                       problem.difficulty === "hard" ? 75 : 100;
+
+        const updatedTeam = {
+          ...team,
+          points: [team.points[0] + points, team.points[1]],
+          solved: [...team.solved, problemId],
+        };
+
+        const allTeams = JSON.parse(localStorage.getItem("codex-teams") || "[]");
+        const index = allTeams.findIndex((t: any) => t.code === team.code);
+        allTeams[index] = updatedTeam;
+
+        localStorage.setItem("codex-teams", JSON.stringify(allTeams));
+      }
+
+      setFeedback("✅ Correct!");
+    } else {
+      setFeedback("❌ Incorrect.");
+    }
   };
 
   return (
@@ -93,12 +129,14 @@ export default function ProblemPage() {
 
         <CodeEditor
           language={language}
-          starterCode={starterCode}
-          onResult={handleResult}
+          starterCode={problem.starterCode?.[language] || ""}
+          onResult={(code) => Promise.resolve(setCode(code))}
         />
 
+        <Button onClick={handleSubmit} className="mt-4">Submit</Button>
+
         {feedback && (
-          <div className="mt-4 text-sm font-semibold whitespace-pre-wrap">
+          <div className="mt-4 text-sm font-semibold">
             {feedback}
           </div>
         )}
