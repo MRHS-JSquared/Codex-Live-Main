@@ -84,6 +84,7 @@ export default function ProblemPage() {
           teamCode: updatedTeam.code
         }));
 
+        setFeedback("🎉 Problem solved! Awarded" + pointsEarned + "points.");
         console.log("🎉 Problem solved! Awarded", pointsEarned, "points.");
         setTeam(updatedTeam);
       } else {
