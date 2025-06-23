@@ -26,24 +26,32 @@ export default function ProblemPage() {
   useEffect(() => {
     if (!team) {
       router.push("/team");
-    } else if (problem?.difficulty === "hard" || problem?.difficulty === "extreme") {
-      if (team.difficulty === "beginner") {
-        router.push("/problems");
-      }
+    } else if (
+      (problem?.difficulty === "hard" || problem?.difficulty === "extreme") &&
+      team.difficulty === "beginner"
+    ) {
+      router.push("/problems");
     }
   }, [team, problem, router]);
 
-  if (!problem) return <div className="text-white p-6">Problem not found.</div>;
-  if (!team) return null;
+  if (!problem || !team) return <div className="text-white p-6">Problem not found or team missing.</div>;
 
   const handleRun = async (code: string) => {
     let allCorrect = true;
 
-    for (const test of problem.testCases) {
+    for (let i = 0; i < problem.testCases.length; i++) {
+      const test = problem.testCases[i];
       const result = await sendCodeToPiston(language, code, test.input);
 
       const output = result.output.trim();
       const expected = test.output.trim();
+
+      console.log(`🧪 Test Case ${i + 1}`);
+      console.log("📥 Input:", test.input);
+      console.log("✅ Expected:", expected);
+      console.log("📤 Output:", output);
+      console.log("🔧 Raw Piston Result:", result);
+      console.log("----------------------------------");
 
       if (output !== expected) {
         allCorrect = false;
@@ -53,7 +61,6 @@ export default function ProblemPage() {
 
     if (allCorrect) {
       if (!team.solved.includes(problemId)) {
-        // award points
         const pointsEarned =
           problem.difficulty === "easy" ? 25 :
           problem.difficulty === "medium" ? 50 :
@@ -75,11 +82,11 @@ export default function ProblemPage() {
           teamCode: updatedTeam.code
         }));
 
-        // reloading the page context
+        console.log("🎉 Problem solved! Awarded", pointsEarned, "points.");
         location.reload();
+      } else {
+        setFeedback("✅ Correct! Already solved.");
       }
-
-      setFeedback("✅ Correct! You've earned points.");
     } else {
       setFeedback("❌ Incorrect. Try again.");
     }
