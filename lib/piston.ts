@@ -9,15 +9,17 @@ const LANGUAGE_MAP: Record<PistonLanguage, string> = {
   rust: 'rust',
 };
 
-type PistonResponse = {
-  compile_output?: string | null;
-  run: {
-    stdout?: string;
-    stderr?: string;
-    output?: string;
-    code: number;
-  };
-};
+function getFileName(language: PistonLanguage): string {
+  switch (language) {
+    case 'python': return 'main.py';
+    case 'cpp': return 'main.cpp';
+    case 'java': return 'Main.java';
+    case 'javascript': return 'main.js';
+    case 'csharp': return 'Main.cs';
+    case 'rust': return 'main.rs';
+    default: return 'main.txt';
+  }
+}
 
 export async function sendCodeToPiston(
   language: PistonLanguage,
@@ -32,16 +34,21 @@ export async function sendCodeToPiston(
       },
       body: JSON.stringify({
         language: LANGUAGE_MAP[language],
-        version: "*", // ✅ Required by Piston API
-        source: code,
+        version: '*',
+        files: [
+          {
+            name: getFileName(language),
+            content: code,
+          },
+        ],
         stdin: input,
       }),
     });
 
     const data = await response.json();
-    console.log("Piston API result:", data); // helpful debug log
+    console.log("Piston API result:", data); // DEBUG LOG
 
-    const output = [data.compile_output, data.run?.output]
+    const output = [data.compile?.output, data.run?.output, data.run?.stderr]
       .filter(Boolean)
       .join('\n')
       .trim();
@@ -50,6 +57,7 @@ export async function sendCodeToPiston(
 
     return { output, success };
   } catch (error: any) {
+    console.error("Piston API error:", error);
     return { output: `Error: ${error.message}`, success: false };
   }
 }
