@@ -11,16 +11,15 @@ export default function CodeEditor({
 }: {
   language: PistonLanguage;
   starterCode: string;
-  onResult: (output: string, success: boolean) => void;
+  onResult: (code: string) => Promise<void>;
 }) {
   const [code, setCode] = useState(starterCode);
   const [loading, setLoading] = useState(false);
 
-  const runCode = async () => {
+  const handleSubmit = async () => {
     setLoading(true);
-    const result = await sendCodeToPiston(language, code);
+    await onResult(code);
     setLoading(false);
-    onResult(result.output, result.success);
   };
 
   return (
@@ -30,7 +29,7 @@ export default function CodeEditor({
         value={code}
         onChange={(e) => setCode(e.target.value)}
       />
-      <Button onClick={runCode} disabled={loading}>
+      <Button onClick={handleSubmit} disabled={loading}>
         {loading ? 'Running...' : 'Submit'}
       </Button>
     </div>

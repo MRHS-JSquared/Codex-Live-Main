@@ -1,3 +1,4 @@
+// app/problems/[id]/page.tsx
 'use client';
 
 import { useParams, useRouter } from "next/navigation";
@@ -19,6 +20,7 @@ export default function ProblemPage() {
 
   const [language, setLanguage] = useState<PistonLanguage>('python');
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [starterCode, setStarterCode] = useState<string>('');
 
   const problem = problems.find(p => p.id === Number(id));
 
@@ -29,22 +31,23 @@ export default function ProblemPage() {
     }
   }, [team, problem, router]);
 
+  useEffect(() => {
+    if (problem?.starterCode) {
+      setStarterCode(problem.starterCode[language] || '');
+    }
+  }, [language, problem]);
+
   if (!problem) return <div className="text-white p-6">Problem not found.</div>;
 
-  const handleResult = async (output: string) => {
-    const expected = problem.examples[0].output.trim();
-    const actual = output.trim();
+  const handleResult = async (code: string) => {
+    const input = problem.examples[0]?.input || "";
+    const expected = problem.examples[0]?.output.trim();
 
-    const success = actual === expected;
-    setFeedback(success ? "Correct! 🎉" : `Incorrect ❌\nExpected: ${expected}\nGot: ${actual}`);
-
-    // Optional: logic for updating team points and solved problems can go here
-  };
-
-  const handleSubmit = async (code: string) => {
-    const input = problem.examples[0].input;
     const result = await sendCodeToPiston(language, code, input);
-    handleResult(result.output);
+    const output = result.output.trim();
+
+    const isCorrect = output === expected;
+    setFeedback(isCorrect ? "Correct! 🎉" : `Incorrect ❌\nOutput: ${output}`);
   };
 
   return (
@@ -90,8 +93,8 @@ export default function ProblemPage() {
 
         <CodeEditor
           language={language}
-          starterCode={problem.starterCode?.[language] || ''}
-          onResult={handleSubmit}
+          starterCode={starterCode}
+          onResult={handleResult}
         />
 
         {feedback && (
