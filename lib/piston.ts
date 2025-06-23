@@ -9,6 +9,16 @@ const LANGUAGE_MAP: Record<PistonLanguage, string> = {
   rust: 'rust',
 };
 
+type PistonResponse = {
+  compile_output?: string | null;
+  run: {
+    stdout?: string;
+    stderr?: string;
+    output?: string;
+    code: number;
+  };
+};
+
 export async function sendCodeToPiston(
   language: PistonLanguage,
   code: string,
@@ -27,17 +37,33 @@ export async function sendCodeToPiston(
       }),
     });
 
-    const data = await response.json();
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ Piston API error:", response.status, errorText);
+      return { output: `Error: ${response.status} ${response.statusText}`, success: false };
+    }
 
-    const output = [data.compile_output, data.run?.output]
+    const data: PistonResponse = await response.json();
+
+    const combinedOutput = [
+      data.compile_output,
+      data.run?.output,
+      data.run?.stdout,
+    ]
       .filter(Boolean)
       .join('\n')
       .trim();
 
-    const success = !data.run?.stderr && data.run?.code === 0;
+    const hasError = !!data.run?.stderr || data.run?.code !== 0;
 
-    return { output, success };
+    console.log("⚙️ Full Piston response:", data);
+
+    return {
+      output: combinedOutput || data.run?.stderr || 'No output',
+      success: !hasError,
+    };
   } catch (error: any) {
+    console.error("❌ Network or fetch error:", error);
     return { output: `Error: ${error.message}`, success: false };
   }
 }
