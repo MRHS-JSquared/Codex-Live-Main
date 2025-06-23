@@ -57,6 +57,8 @@ export default function ProblemPage() {
         allCorrect = false;
         break;
       }
+      
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     if (allCorrect) {
