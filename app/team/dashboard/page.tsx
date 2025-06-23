@@ -42,7 +42,7 @@ export default function TeamDashboard() {
               </span>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold">0</p>
+              <p className="text-2xl font-bold">{team?.points[0]}</p>
               <p className="text-sm text-zinc-400">Total Points</p>
             </div>
           </div>
