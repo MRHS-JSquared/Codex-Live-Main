@@ -22,6 +22,17 @@ export default function ProblemPage() {
 
   const [language, setLanguage] = useState<PistonLanguage>("python");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [codeByLang, setCodeByLang] = useState<Record<PistonLanguage, string>>(() => {
+    const initial: Record<PistonLanguage, string> = {
+      python: problem?.starterCode?.python || '',
+      cpp: problem?.starterCode?.cpp || '',
+      java: problem?.starterCode?.java || '',
+      javascript: problem?.starterCode?.javascript || '',
+      rust: problem?.starterCode?.rust || '',
+      csharp: problem?.starterCode?.csharp || '',
+    };
+    return initial;
+  });
 
   useEffect(() => {
     if (!team) {
@@ -35,6 +46,10 @@ export default function ProblemPage() {
   }, [team, problem, router]);
 
   if (!problem || !team) return <div className="text-white p-6">Problem not found or team missing.</div>;
+
+  const handleCodeChange = (newCode: string) => {
+    setCodeByLang(prev => ({ ...prev, [language]: newCode }));
+  };
 
   const handleRun = async (code: string) => {
     let allCorrect = true;
@@ -84,7 +99,7 @@ export default function ProblemPage() {
           teamCode: updatedTeam.code
         }));
 
-        setFeedback("🎉 Problem solved! Awarded" + pointsEarned + "points.");
+        setFeedback("🎉 Problem solved! Awarded " + pointsEarned + " points.");
         console.log("🎉 Problem solved! Awarded", pointsEarned, "points.");
         setTeam(updatedTeam);
       } else {
@@ -138,8 +153,9 @@ export default function ProblemPage() {
 
         <CodeEditor
           language={language}
-          starterCode={problem.starterCode?.[language] || ''}
+          starterCode={codeByLang[language]}
           onResult={handleRun}
+          onCodeChange={handleCodeChange}
         />
 
         {feedback && (
