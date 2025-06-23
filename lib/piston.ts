@@ -32,38 +32,24 @@ export async function sendCodeToPiston(
       },
       body: JSON.stringify({
         language: LANGUAGE_MAP[language],
+        version: "*", // ✅ Required by Piston API
         source: code,
         stdin: input,
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Piston API error:", response.status, errorText);
-      return { output: `Error: ${response.status} ${response.statusText}`, success: false };
-    }
+    const data = await response.json();
+    console.log("Piston API result:", data); // helpful debug log
 
-    const data: PistonResponse = await response.json();
-
-    const combinedOutput = [
-      data.compile_output,
-      data.run?.output,
-      data.run?.stdout,
-    ]
+    const output = [data.compile_output, data.run?.output]
       .filter(Boolean)
       .join('\n')
       .trim();
 
-    const hasError = !!data.run?.stderr || data.run?.code !== 0;
+    const success = !data.run?.stderr && data.run?.code === 0;
 
-    console.log("⚙️ Full Piston response:", data);
-
-    return {
-      output: combinedOutput || data.run?.stderr || 'No output',
-      success: !hasError,
-    };
+    return { output, success };
   } catch (error: any) {
-    console.error("❌ Network or fetch error:", error);
     return { output: `Error: ${error.message}`, success: false };
   }
 }
