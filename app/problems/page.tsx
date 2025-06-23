@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { problems } from "@/lib/problems";
 import ProblemCard from "@/components/problem/ProblemCard";
 import Navbar from "@/components/ui/navbar";
+import { Trophy } from "lucide-react";
 
 export default function ProblemsPage() {
   const { user } = useAuth();
@@ -26,19 +27,37 @@ export default function ProblemsPage() {
   const extreme = problems.filter((p) => p.difficulty === "extreme");
 
   return (
-    <main className="bg-black text-white min-h-screen flex flex-col">
+    <main className="bg-black text-white min-h-screen">
       <Navbar />
 
-      <section className="flex-grow px-6 py-10 max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2">Problems</h1>
-        <p className="text-zinc-400 mb-10 text-sm">
-          Solve challenges to earn points for your team.
-        </p>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+          <div>
+            <h1 className="text-4xl font-bold mb-1">Problems</h1>
+            <p className="text-sm text-zinc-400">
+              Solve coding challenges to earn points for your team
+              <br />
+              <span className="text-zinc-500 text-xs">
+                Hard and Extreme problems are locked for beginner division
+              </span>
+            </p>
+          </div>
+          <div className="text-right mt-4 md:mt-0">
+            <p className="text-zinc-400 text-sm">Solved</p>
+            <h2 className="text-xl font-semibold">
+              {team?.solved.length ?? 0}/24
+            </h2>
+          </div>
+        </div>
 
         {/* Easy */}
         <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-green-400 mb-4">Easy</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="h-3 w-3 rounded-full bg-green-500" />
+            <h2 className="text-xl font-semibold">Easy</h2>
+            <span className="text-sm text-zinc-400">({easy.length})</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {easy.map((p) => (
               <ProblemCard
                 key={p.id}
@@ -52,8 +71,12 @@ export default function ProblemsPage() {
 
         {/* Medium */}
         <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-yellow-400 mb-4">Medium</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="h-3 w-3 rounded-full bg-yellow-500" />
+            <h2 className="text-xl font-semibold">Medium</h2>
+            <span className="text-sm text-zinc-400">({medium.length})</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {medium.map((p) => (
               <ProblemCard
                 key={p.id}
@@ -67,8 +90,12 @@ export default function ProblemsPage() {
 
         {/* Hard */}
         <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-orange-400 mb-4">Hard</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="h-3 w-3 rounded-full bg-orange-500" />
+            <h2 className="text-xl font-semibold">Hard</h2>
+            <span className="text-sm text-zinc-400">({hard.length})</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {hard.map((p) => (
               <ProblemCard
                 key={p.id}
@@ -83,8 +110,12 @@ export default function ProblemsPage() {
 
         {/* Extreme */}
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-red-400 mb-4">Extreme</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="h-3 w-3 rounded-full bg-red-500" />
+            <h2 className="text-xl font-semibold">Extreme</h2>
+            <span className="text-sm text-zinc-400">({extreme.length})</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {extreme.map((p) => (
               <ProblemCard
                 key={p.id}
