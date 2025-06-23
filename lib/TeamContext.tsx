@@ -3,42 +3,45 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 
-//Updates user database with new team
+// Updates user database with new teamCode
 const updateUserInList = (updatedUser: any) => {
-    const users = JSON.parse(localStorage.getItem("codex-users") || "[]");
-    const newUsers = users.map((u: any) =>
-      u.email === updatedUser.email ? updatedUser : u
-    );
-    localStorage.setItem("codex-users", JSON.stringify(newUsers));
-  };
+  const users = JSON.parse(localStorage.getItem("codex-users") || "[]");
+  const newUsers = users.map((u: any) =>
+    u.email === updatedUser.email ? updatedUser : u
+  );
+  localStorage.setItem("codex-users", JSON.stringify(newUsers));
+};
 
 // Define the shape of a Team object
 type Team = {
   name: string;
   difficulty: "beginner" | "advanced";
-  code: string; // Unique team identifier
+  code: string;
+  points: number[]; // [problemPoints, hackathonPoints]
+  hackathon: string;
+  solved: number[];  // <== new
   members: string[];
 };
 
-// Define the shape of what this context provides
+// What this context provides
 type TeamContextType = {
   team: Team | null;
   createTeam: (name: string, difficulty: "beginner" | "advanced") => boolean;
   joinTeam: (code: string) => boolean;
+  markProblemSolved: (problemId: number, points: number) => void; // <== new
 };
 
-// Create the actual context (initially undefined)
+// Create the actual context
 const TeamContext = createContext<TeamContextType | undefined>(undefined);
 
 // Utility: generate a 6-character uppercase code
 const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-// This is the provider that wraps your app
 export const TeamProvider = ({ children }: { children: ReactNode }) => {
   const [team, setTeam] = useState<Team | null>(null);
-  const { user } = useAuth(); // Get the current logged-in user
+  const { user } = useAuth();
 
-  // On mount, try to load team from localStorage if the user has one
+  // Sync team from localStorage on load or user change
   useEffect(() => {
     if (!user || !user.teamCode) {
       setTeam(null);
@@ -51,27 +54,31 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
     else setTeam(null);
   }, [user]);
 
-  // Create a new team and assign it to the current user
+  // Create a new team
   const createTeam = (name: string, difficulty: "beginner" | "advanced"): boolean => {
     if (!user) return false;
 
     const code = generateCode();
-    const newTeam: Team = { name, difficulty, code, members: [user.email] };
+    const newTeam: Team = {
+      name,
+      difficulty,
+      code,
+      points: [0, 0],
+      hackathon: "",
+      solved: [],
+      members: [user.email],
+    };
 
-    // Save new team to localStorage
     const existing: Team[] = JSON.parse(localStorage.getItem("codex-teams") || "[]");
     if (existing.find(t => t.name.toLowerCase() === name.toLowerCase())) return false;
+
     localStorage.setItem("codex-teams", JSON.stringify([...existing, newTeam]));
 
-    // Update the user's teamCode and persist it
     const updatedUser = { ...user, teamCode: code };
     localStorage.setItem("codex-user", JSON.stringify(updatedUser));
     updateUserInList(updatedUser);
 
-
-    // Set the new team in memory
     setTeam(newTeam);
-
     return true;
   };
 
@@ -83,32 +90,51 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
     const index = teams.findIndex(t => t.code === code.toUpperCase());
     if (index === -1) return false;
 
-    const team  = teams[index];
+    const team = teams[index];
     if (team.members.length >= 3) return false;
     if (team.members.includes(user.email)) return true;
 
-    const updatedTeam = {...team, members:[...team.members, user.email]};
+    const updatedTeam = {
+      ...team,
+      members: [...team.members, user.email],
+    };
     teams[index] = updatedTeam;
 
-    // Assign teamCode to the user and save
     const updatedUser = { ...user, teamCode: updatedTeam.code };
     localStorage.setItem("codex-user", JSON.stringify(updatedUser));
     updateUserInList(updatedUser);
 
-
+    localStorage.setItem("codex-teams", JSON.stringify(teams));
     setTeam(updatedTeam);
     return true;
   };
 
+  // Mark a problem as solved and award points
+  const markProblemSolved = (problemId: number, points: number) => {
+    if (!team || team.solved.includes(problemId)) return;
+
+    const teams: Team[] = JSON.parse(localStorage.getItem("codex-teams") || "[]");
+    const index = teams.findIndex(t => t.code === team.code);
+    if (index === -1) return;
+
+    const updatedTeam: Team = {
+      ...team,
+      points: [team.points[0] + points, team.points[1]],
+      solved: [...team.solved, problemId],
+    };
+
+    teams[index] = updatedTeam;
+    localStorage.setItem("codex-teams", JSON.stringify(teams));
+    setTeam(updatedTeam);
+  };
 
   return (
-    <TeamContext.Provider value={{ team, createTeam, joinTeam }}>
+    <TeamContext.Provider value={{ team, createTeam, joinTeam, markProblemSolved }}>
       {children}
     </TeamContext.Provider>
   );
 };
 
-// Hook to access team context easily in any component
 export const useTeam = () => {
   const ctx = useContext(TeamContext);
   if (!ctx) throw new Error("useTeam must be used within a <TeamProvider>");
