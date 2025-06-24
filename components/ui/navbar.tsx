@@ -71,7 +71,7 @@ export default function Navbar() {
 
         <li>
           <a
-            href="/info"
+            href="https://preview--codex-spark-forge-web.lovable.app/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 hover:text-white transition"
