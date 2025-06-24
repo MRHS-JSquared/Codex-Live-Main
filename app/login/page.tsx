@@ -8,24 +8,24 @@ import Navbar from "@/components/ui/navbar";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login } = useAuth(); // now uses Supabase under the hood
   const router = useRouter();
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
-    const email = form.email.value;
+    const email = form.email.value.trim();
     const password = form.password.value;
 
-    if (!(email && password)) {
-      setError("Please fill in all fields");
+    if (!email || !password) {
+      setError("Please fill in all fields.");
       return;
     }
 
-    const success = login(email, password);
+    const success = await login(email, password); // now async
     if (!success) {
-      setError("Invalid credentials.");
+      setError("Invalid email or password.");
     } else {
       router.push("/");
     }

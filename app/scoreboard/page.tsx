@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Navbar from '@/components/ui/navbar';
+import { supabase } from '@/lib/supabaseClient';
 
 type Team = {
   name: string;
@@ -15,17 +16,31 @@ export default function ScoreboardPage() {
   const [teams, setTeams] = useState<Team[]>([]);
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem('codex-teams') || '[]');
-    const sorted = [...stored].sort((a: Team, b: Team) => {
-      const aTotal = a.points[0] + a.points[1];
-      const bTotal = b.points[0] + b.points[1];
-      return bTotal - aTotal;
-    });
-    setTeams(sorted);
+    const fetchTeams = async () => {
+      const { data, error } = await supabase
+        .from('teams')
+        .select('name, code, difficulty, points, members');
+
+      if (error) {
+        console.error('Error fetching teams:', error.message);
+        return;
+      }
+
+      const sorted = [...(data || [])].sort((a: Team, b: Team) => {
+        const aTotal = a.points[0] + a.points[1];
+        const bTotal = b.points[0] + b.points[1];
+        return bTotal - aTotal;
+      });
+
+      setTeams(sorted);
+    };
+
+    fetchTeams();
   }, []);
 
   const renderLeaderboard = (division: 'beginner' | 'advanced') => {
     const filtered = teams.filter((t) => t.difficulty === division);
+
     return (
       <div className="mb-12">
         <h2 className="text-2xl font-bold mb-4">

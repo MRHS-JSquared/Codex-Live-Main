@@ -12,21 +12,21 @@ export default function SignupPage() {
   const router = useRouter();
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
-    const username = form.username.value;
-    const email = form.email.value;
+    const username = form.username.value.trim();
+    const email = form.email.value.trim();
     const password = form.password.value;
 
-    if (!(username && email && password)) {
-      setError("Please fill in all fields");
+    if (!username || !email || !password) {
+      setError("Please fill in all fields.");
       return;
     }
 
-    const success = signup(email, password, username);
+    const success = await signup(email, password, username); // async now
     if (!success) {
-      setError("An account with that email already exists.");
+      setError("An account with that email already exists or there was an error.");
     } else {
       router.push("/team");
     }

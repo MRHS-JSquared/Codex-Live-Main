@@ -7,6 +7,7 @@ import CodeEditor from "@/components/problem/CodeEditor";
 import { PistonLanguage, sendCodeToPiston } from "@/lib/piston";
 import { useTeam } from "@/lib/TeamContext";
 import Navbar from "@/components/ui/navbar";
+import { supabase } from "@/lib/supabaseClient";
 
 const languageOptions: PistonLanguage[] = [
   "python", "cpp", "java", "javascript", "rust", "csharp"
@@ -83,25 +84,28 @@ export default function ProblemPage() {
           problem.difficulty === "medium" ? 50 :
           problem.difficulty === "hard" ? 75 : 100;
 
-        const updatedTeam = {
-          ...team,
-          points: [team.points[0] + pointsEarned, team.points[1]],
-          solved: [...team.solved, problemId],
-        };
+        const newPoints = [team.points[0] + pointsEarned, team.points[1]];
+        const newSolved = [...team.solved, problemId];
 
-        const allTeams = JSON.parse(localStorage.getItem("codex-teams") || "[]");
-        const updatedTeams = allTeams.map((t: any) =>
-          t.code === team.code ? updatedTeam : t
-        );
-        localStorage.setItem("codex-teams", JSON.stringify(updatedTeams));
-        localStorage.setItem("codex-user", JSON.stringify({
-          ...JSON.parse(localStorage.getItem("codex-user")!),
-          teamCode: updatedTeam.code
-        }));
+        const { data, error } = await supabase
+          .from("teams")
+          .update({ points: newPoints, solved: newSolved })
+          .eq("code", team.code)
+          .select()
+          .single();
 
-        setFeedback("🎉 Problem solved! Awarded " + pointsEarned + " points.");
-        console.log("🎉 Problem solved! Awarded", pointsEarned, "points.");
+        if (error) {
+          console.error("❌ Failed to update team in Supabase:", error.message);
+          setFeedback("Error saving your progress. Try again.");
+          return;
+        }
+
+        // Update context
+        const updatedTeam = { ...team, points: newPoints, solved: newSolved };
         setTeam(updatedTeam);
+
+        setFeedback(`🎉 Problem solved! Awarded ${pointsEarned} points.`);
+        console.log("🎉 Supabase updated. Points awarded:", pointsEarned);
       } else {
         setFeedback("✅ Correct! Already solved.");
       }

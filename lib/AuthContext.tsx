@@ -1,78 +1,118 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { supabase } from "@/lib/supabaseClient"; // assumes you created this already
+import type { Session } from "@supabase/supabase-js";
 
-// Define the structure of a User object
+// Define the structure of your app-level user
 type User = {
   email: string;
-  password: string;
   username: string;
   teamCode?: string;
 };
 
-// Define what values and functions our AuthContext will provide
 type AuthContextType = {
   user: User | null;
-  login: (email: string, password: string) => boolean;
-  signup: (email: string, password: string, username: string) => boolean;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (email: string, password: string, username: string) => Promise<boolean>;
+  logout: () => Promise<void>;
 };
 
-// Create a context with that shape, initially undefined
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// The AuthProvider wraps your whole app and manages the auth state
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  // On app load, check if someone is already logged in and restore their session
-  useEffect(() => {
-    const storedUser = localStorage.getItem("codex-user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+  // Fetch additional user data (like username/team) from your `users` table
+  const fetchUserProfile = async (email: string) => {
+    const { data, error } = await supabase
+      .from("users")
+      .select("username, team_code")
+      .eq("email", email)
+      .single();
+
+    if (error) {
+      console.error("Error fetching user profile:", error);
+      return null;
     }
+
+    return {
+      email,
+      username: data.username,
+      teamCode: data.team_code ?? undefined,
+    };
+  };
+
+  // On mount: check session and load user
+  useEffect(() => {
+    const loadSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
+
+      if (session?.user?.email) {
+        const profile = await fetchUserProfile(session.user.email);
+        if (profile) setUser(profile);
+      }
+    };
+
+    loadSession();
+
+    // Optional: listen to auth changes (for example after logout in another tab)
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user?.email) {
+        const profile = await fetchUserProfile(session.user.email);
+        if (profile) setUser(profile);
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
+  // Login
+  const login = async (email: string, password: string): Promise<boolean> => {
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user?.email) return false;
 
-  // Login function: check if email/password match an existing user
-  const login = (email: string, password: string): boolean => {
-    //Looks through all users and find user with inputted info
-    const existingUser = (JSON.parse(localStorage.getItem("codex-users") || "[]") as User[])
-    .find(u => u.email === email && u.password === password);
+    const profile = await fetchUserProfile(data.user.email);
+    if (profile) {
+      setUser(profile);
+      return true;
+    }
 
-    if (!existingUser) return false;
+    return false;
+  };
 
-    //Logs in
-    localStorage.setItem("codex-user", JSON.stringify(existingUser));
-    setUser(existingUser);
+  // Signup
+  const signup = async (email: string, password: string, username: string): Promise<boolean> => {
+    const { error, data } = await supabase.auth.signUp({ email, password });
+    if (error || !data.user?.email) return false;
+
+    // Insert extra profile info into your `users` table
+    const { error: insertError } = await supabase.from("users").insert({
+      email,
+      username,
+      team_code: null,
+    });
+
+    if (insertError) {
+      console.error("Failed to create user profile:", insertError);
+      return false;
+    }
+
+    setUser({ email, username, teamCode: undefined });
     return true;
   };
 
-  // Signup function: add a new user if email not taken
-  const signup = (email: string, password: string, username: string): boolean => {
-    //Caches all users in the database
-    const users: User[] = JSON.parse(localStorage.getItem("codex-users") || "[]");
-
-    //If user is found
-    if (users.find(u => u.email === email)) return false;
-
-    //Creates a new user
-    const newUser: User = { email, password, username, teamCode: undefined };
-
-    //Updates database and sets new user
-    localStorage.setItem("codex-users", JSON.stringify([...users, newUser]));
-    localStorage.setItem("codex-user", JSON.stringify(newUser));
-    setUser(newUser);
-    return true;
-  };
-
-  // Logout: remove the session and clear state
-  const logout = () => {
-    localStorage.removeItem("codex-user");
+  // Logout
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
-  // Provide the user state and auth functions to the rest of the app
   return (
     <AuthContext.Provider value={{ user, login, signup, logout }}>
       {children}
@@ -80,7 +120,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Custom hook for easy access to auth context
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");

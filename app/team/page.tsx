@@ -4,7 +4,7 @@ import Navbar from "@/components/ui/navbar";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { useTeam } from "@/lib/TeamContext"
+import { useTeam } from "@/lib/TeamContext";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -12,47 +12,61 @@ export default function TeamPage() {
   const { user } = useAuth();
   const { createTeam, joinTeam, team } = useTeam();
   const router = useRouter();
+
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!user) router.push("/login");
     else if (team) router.push("/team/dashboard");
   }, [user, team, router]);
 
-  const handleSubmitCreate = (e: React.FormEvent) => {
+  const handleSubmitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
+
     const form = e.target as HTMLFormElement;
     const name = form.teamName.value.trim();
     const difficulty = form.difficulty.value;
 
     if (!(name && difficulty)) {
-        setError("Please fill in all fields");
-        return;
+      setError("Please fill in all fields");
+      setLoading(false);
+      return;
     }
 
-    const success = createTeam(name, difficulty);
+    const success = await createTeam(name, difficulty);
+    setLoading(false);
+
     if (!success) {
-        setError("Team with that name already exists")
+      setError("Team with that name already exists or creation failed");
     } else {
-        router.push("/team/dashboard");
+      router.push("/team/dashboard");
     }
   };
 
-  const handleSubmitJoin = (e: React.FormEvent) => {
+  const handleSubmitJoin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
+
     const form = e.target as HTMLFormElement;
     const code = form.accessCode.value.trim();
 
     if (!code) {
-        setError("Please fill in all fields");
-        return;
+      setError("Please fill in all fields");
+      setLoading(false);
+      return;
     }
 
-    const success = joinTeam(code);
+    const success = await joinTeam(code);
+    setLoading(false);
+
     if (!success) {
-        setError("Code is invalid");
+      setError("Code is invalid or joining team failed");
     } else {
-        router.push("/team/dashboard");
+      router.push("/team/dashboard");
     }
   };
 
@@ -111,8 +125,12 @@ export default function TeamPage() {
                   <option value="beginner">Beginner</option>
                   <option value="advanced">Advanced</option>
                 </select>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-md">
-                  Create Team
+                <Button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                  disabled={loading}
+                >
+                  {loading ? "Creating..." : "Create Team"}
                 </Button>
               </form>
             </motion.div>
@@ -136,8 +154,12 @@ export default function TeamPage() {
                   required
                   className="w-full bg-zinc-800 border border-zinc-700 px-4 py-2 rounded-md text-sm placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
-                <Button className="w-full bg-zinc-100 text-black hover:bg-white rounded-md">
-                  Join Team
+                <Button
+                  type="submit"
+                  className="w-full bg-zinc-100 text-black hover:bg-white rounded-md"
+                  disabled={loading}
+                >
+                  {loading ? "Joining..." : "Join Team"}
                 </Button>
               </form>
             </motion.div>
