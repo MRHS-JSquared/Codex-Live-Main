@@ -3,24 +3,44 @@
 import Navbar from "@/components/ui/navbar";
 import { useTeam } from "@/lib/TeamContext";
 import { useAuth } from "@/lib/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import Link from "next/link";
 
+type User = {
+  email: string;
+  username: string;
+};
+
 export default function TeamDashboard() {
   const { team } = useTeam();
   const { user } = useAuth();
   const router = useRouter();
+  const [allUsers, setAllUsers] = useState<User[]>([]);
 
   useEffect(() => {
     if (!user) router.push("/login");
     else if (!team) router.push("/team");
+    else {
+      const stored = localStorage.getItem("codex-users");
+      if (stored) {
+        try {
+          setAllUsers(JSON.parse(stored));
+        } catch (e) {
+          console.error("Failed to parse codex-users from localStorage");
+        }
+      }
+    }
   }, [user, team, router]);
 
   const copyToClipboard = () => {
     if (team?.code) navigator.clipboard.writeText(team.code);
+  };
+
+  const getUsername = (email: string) => {
+    return allUsers.find((u) => u.email === email)?.username || email;
   };
 
   return (
@@ -29,9 +49,7 @@ export default function TeamDashboard() {
 
       <section className="max-w-6xl mx-auto px-6 py-10">
         <h1 className="text-3xl font-bold mb-1">Team Dashboard</h1>
-        <p className="text-zinc-400 mb-6">
-          Manage your team and track progress
-        </p>
+        <p className="text-zinc-400 mb-6">Manage your team and track progress</p>
 
         {/* Team Info */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
@@ -106,13 +124,13 @@ export default function TeamDashboard() {
             Team Members ({team?.members?.length || 1})
           </h3>
           <ul className="space-y-2">
-            {team?.members?.map((member, index) => (
+            {team?.members?.map((email, index) => (
               <li
                 key={index}
                 className="bg-zinc-800 px-4 py-2 rounded-md text-sm"
               >
-                {member}
-                {user?.username === member && " (you)"}
+                {getUsername(email)}
+                {user?.email === email && " (you)"}
               </li>
             ))}
           </ul>
