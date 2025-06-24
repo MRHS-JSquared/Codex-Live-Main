@@ -1,63 +1,81 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { useAuth } from "./AuthContext";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
+import { useAuth } from './AuthContext';
+import { supabase } from './supabaseClient';
 
-// Updates user database with new teamCode
-const updateUserInList = (updatedUser: any) => {
-  const users = JSON.parse(localStorage.getItem("codex-users") || "[]");
-  const newUsers = users.map((u: any) =>
-    u.email === updatedUser.email ? updatedUser : u
-  );
-  localStorage.setItem("codex-users", JSON.stringify(newUsers));
-};
-
-// Define the shape of a Team object
 type Team = {
   name: string;
-  difficulty: "beginner" | "advanced";
+  difficulty: 'beginner' | 'advanced';
   code: string;
   points: number[]; // [problemPoints, hackathonPoints]
   hackathon: string;
-  solved: number[];  // <== new
-  members: string[];
+  solved: number[];
+  members: string[]; // emails
 };
 
-// What this context provides
 type TeamContextType = {
   team: Team | null;
-  createTeam: (name: string, difficulty: "beginner" | "advanced") => boolean;
-  joinTeam: (code: string) => boolean;
-  markProblemSolved: (problemId: number, points: number) => void; // <== new
+  createTeam: (name: string, difficulty: 'beginner' | 'advanced') => Promise<boolean>;
+  joinTeam: (code: string) => Promise<boolean>;
+  markProblemSolved: (problemId: number, points: number) => Promise<void>;
   setTeam: React.Dispatch<React.SetStateAction<Team | null>>;
 };
 
-// Create the actual context
 const TeamContext = createContext<TeamContextType | undefined>(undefined);
 
-// Utility: generate a 6-character uppercase code
 const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 export const TeamProvider = ({ children }: { children: ReactNode }) => {
   const [team, setTeam] = useState<Team | null>(null);
   const { user } = useAuth();
 
-  // Sync team from localStorage on load or user change
+  // Load team on user change
   useEffect(() => {
-    if (!user || !user.teamCode) {
-      setTeam(null);
-      return;
-    }
+    const loadTeam = async () => {
+      if (!user?.teamCode) {
+        setTeam(null);
+        return;
+      }
 
-    const teams: Team[] = JSON.parse(localStorage.getItem("codex-teams") || "[]");
-    const found = teams.find(t => t.code === user.teamCode);
-    if (found) setTeam(found);
-    else setTeam(null);
+      const { data, error } = await supabase
+        .from('teams')
+        .select('*')
+        .eq('code', user.teamCode)
+        .single();
+
+      if (error) {
+        console.error('Error loading team:', error);
+        setTeam(null);
+      } else {
+        setTeam(data as Team);
+      }
+    };
+
+    loadTeam();
   }, [user]);
 
   // Create a new team
-  const createTeam = (name: string, difficulty: "beginner" | "advanced"): boolean => {
+  const createTeam = async (
+    name: string,
+    difficulty: 'beginner' | 'advanced'
+  ): Promise<boolean> => {
     if (!user) return false;
+
+    // Check uniqueness
+    const { data: existingTeam } = await supabase
+      .from('teams')
+      .select('name')
+      .eq('name', name)
+      .single();
+
+    if (existingTeam) return false;
 
     const code = generateCode();
     const newTeam: Team = {
@@ -65,72 +83,100 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
       difficulty,
       code,
       points: [0, 0],
-      hackathon: "",
+      hackathon: '',
       solved: [],
       members: [user.email],
     };
 
-    const existing: Team[] = JSON.parse(localStorage.getItem("codex-teams") || "[]");
-    if (existing.find(t => t.name.toLowerCase() === name.toLowerCase())) return false;
+    const { error: teamError } = await supabase.from('teams').insert(newTeam);
+    if (teamError) {
+      console.error('Error creating team:', teamError);
+      return false;
+    }
 
-    localStorage.setItem("codex-teams", JSON.stringify([...existing, newTeam]));
+    // Update user profile
+    const { error: userError } = await supabase
+      .from('users')
+      .update({ team_code: code })
+      .eq('email', user.email);
 
-    const updatedUser = { ...user, teamCode: code };
-    localStorage.setItem("codex-user", JSON.stringify(updatedUser));
-    updateUserInList(updatedUser);
+    if (userError) {
+      console.error('Error updating user with teamCode:', userError);
+      return false;
+    }
 
     setTeam(newTeam);
     return true;
   };
 
-  // Join an existing team by code
-  const joinTeam = (code: string): boolean => {
+  // Join an existing team
+  const joinTeam = async (code: string): Promise<boolean> => {
     if (!user) return false;
 
-    const teams: Team[] = JSON.parse(localStorage.getItem("codex-teams") || "[]");
-    const index = teams.findIndex(t => t.code === code.toUpperCase());
-    if (index === -1) return false;
+    const { data: teamData, error } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('code', code.toUpperCase())
+      .single();
 
-    const team = teams[index];
-    if (team.members.length >= 3) return false;
-    if (team.members.includes(user.email)) return true;
+    if (error || !teamData) return false;
+
+    if (teamData.members.includes(user.email)) return true;
+    if (teamData.members.length >= 3) return false;
 
     const updatedTeam = {
-      ...team,
-      members: [...team.members, user.email],
+      ...teamData,
+      members: [...teamData.members, user.email],
     };
-    teams[index] = updatedTeam;
 
-    const updatedUser = { ...user, teamCode: updatedTeam.code };
-    localStorage.setItem("codex-user", JSON.stringify(updatedUser));
-    updateUserInList(updatedUser);
+    const { error: updateError } = await supabase
+      .from('teams')
+      .update({ members: updatedTeam.members })
+      .eq('code', updatedTeam.code);
 
-    localStorage.setItem("codex-teams", JSON.stringify(teams));
+    if (updateError) {
+      console.error('Error updating team members:', updateError);
+      return false;
+    }
+
+    await supabase
+      .from('users')
+      .update({ team_code: updatedTeam.code })
+      .eq('email', user.email);
+
     setTeam(updatedTeam);
     return true;
   };
 
-  // Mark a problem as solved and award points
-  const markProblemSolved = (problemId: number, points: number) => {
+  // Mark a problem as solved
+  const markProblemSolved = async (problemId: number, points: number) => {
     if (!team || team.solved.includes(problemId)) return;
 
-    const teams: Team[] = JSON.parse(localStorage.getItem("codex-teams") || "[]");
-    const index = teams.findIndex(t => t.code === team.code);
-    if (index === -1) return;
-
-    const updatedTeam: Team = {
+    const updatedTeam = {
       ...team,
       points: [team.points[0] + points, team.points[1]],
       solved: [...team.solved, problemId],
     };
 
-    teams[index] = updatedTeam;
-    localStorage.setItem("codex-teams", JSON.stringify(teams));
-    setTeam(updatedTeam);
+    const { error } = await supabase
+      .from('teams')
+      .update({
+        points: updatedTeam.points,
+        solved: updatedTeam.solved,
+      })
+      .eq('code', team.code);
+
+    if (!error) {
+      setTeam(updatedTeam);
+    } else {
+      console.error('Error updating team score:', error);
+    }
   };
 
   return (
-    <TeamContext.Provider value={{ team, createTeam, joinTeam, markProblemSolved, setTeam }}>
+    <TeamContext.Provider
+      value={{ team, createTeam, joinTeam, markProblemSolved, setTeam }}
+    >
       {children}
     </TeamContext.Provider>
   );
@@ -138,6 +184,6 @@ export const TeamProvider = ({ children }: { children: ReactNode }) => {
 
 export const useTeam = () => {
   const ctx = useContext(TeamContext);
-  if (!ctx) throw new Error("useTeam must be used within a <TeamProvider>");
+  if (!ctx) throw new Error('useTeam must be used within a <TeamProvider>');
   return ctx;
 };

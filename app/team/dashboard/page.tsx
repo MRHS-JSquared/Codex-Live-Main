@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
 
 type User = {
   email: string;
@@ -24,14 +25,12 @@ export default function TeamDashboard() {
     if (!user) router.push("/login");
     else if (!team) router.push("/team");
     else {
-      const stored = localStorage.getItem("codex-users");
-      if (stored) {
-        try {
-          setAllUsers(JSON.parse(stored));
-        } catch (e) {
-          console.error("Failed to parse codex-users from localStorage");
-        }
-      }
+      const fetchUsers = async () => {
+        const { data, error } = await supabase.from("users").select("email, username");
+        if (error) console.error("Failed to fetch users:", error.message);
+        else setAllUsers(data || []);
+      };
+      fetchUsers();
     }
   }, [user, team, router]);
 

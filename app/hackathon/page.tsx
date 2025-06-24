@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useTeam } from '@/lib/TeamContext';
 import Navbar from '@/components/ui/navbar';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function HackathonPage() {
   const { user } = useAuth();
@@ -17,32 +18,35 @@ export default function HackathonPage() {
   useEffect(() => {
     if (!user) router.push('/login');
     else if (!team) router.push('/team');
+    else if (team.hackathon) setRepoLink(team.hackathon); // preload if already submitted
   }, [user, team, router]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!team) return;
-    if (!repoLink.trim()) return alert('Please enter your GitHub repo link.');
+    if (!repoLink.trim()) {
+      alert('Please enter your GitHub repo link.');
+      return;
+    }
 
-    const confirm = window.confirm("Are you sure you want to submit this GitHub repo for your hackathon project? This cannot be changed.");
-
-    if (!confirm) return;
-
-    const updatedTeam = {
-      ...team,
-      hackathonRepo: repoLink
-    };
-
-    const allTeams = JSON.parse(localStorage.getItem("codex-teams") || "[]");
-    const updatedTeams = allTeams.map((t: any) =>
-      t.code === team.code ? updatedTeam : t
+    const confirmSubmit = window.confirm(
+      "Are you sure you want to submit this GitHub repo for your hackathon project? This cannot be changed."
     );
+    if (!confirmSubmit) return;
 
-    localStorage.setItem("codex-teams", JSON.stringify(updatedTeams));
-    localStorage.setItem("codex-user", JSON.stringify({
-      ...JSON.parse(localStorage.getItem("codex-user")!),
-      teamCode: updatedTeam.code
-    }));
+    const { data, error } = await supabase
+      .from("teams")
+      .update({ hackathon: repoLink })
+      .eq("code", team.code)
+      .select()
+      .single();
 
+    if (error) {
+      console.error("Failed to submit hackathon project:", error.message);
+      alert("❌ Submission failed. Please try again.");
+      return;
+    }
+
+    const updatedTeam = { ...team, hackathon: repoLink };
     setTeam(updatedTeam);
     alert("✅ Hackathon project submitted!");
   };
@@ -54,7 +58,7 @@ export default function HackathonPage() {
       <section className="max-w-3xl mx-auto px-6 py-10">
         <h1 className="text-3xl font-bold mb-2">🏆 Hackathon Submission</h1>
         <p className="text-zinc-400 mb-6">
-          Submit your hackathon project here. You will need to provide a **public GitHub repository link** that contains all code and documentation for your project.
+          Submit your hackathon project here. You will need to provide a <strong>public GitHub repository link</strong> that contains all code and documentation for your project.
         </p>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
@@ -65,7 +69,9 @@ export default function HackathonPage() {
             <li>Only one submission per team is allowed.</li>
           </ul>
 
-          <label className="block mb-2 text-sm font-medium text-white">GitHub Repository Link</label>
+          <label className="block mb-2 text-sm font-medium text-white">
+            GitHub Repository Link
+          </label>
           <input
             type="url"
             value={repoLink}
@@ -78,7 +84,7 @@ export default function HackathonPage() {
             onClick={handleSubmit}
             className="w-full bg-purple-600 hover:bg-purple-700"
           >
-            {'Submit Hackathon'}
+            Submit Hackathon
           </Button>
         </div>
       </section>
