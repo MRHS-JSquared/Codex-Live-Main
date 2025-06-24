@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
+import Link from "next/link";
 
 export default function TeamDashboard() {
   const { team } = useTeam();
@@ -43,13 +44,26 @@ export default function TeamDashboard() {
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold">
-              {(team?.points?.[0] ?? 0) + (team?.points?.[1] ?? 0)}
+                {(team?.points?.[0] ?? 0) + (team?.points?.[1] ?? 0)}
               </p>
               <p className="text-sm text-zinc-400">Total Points</p>
               <p className="text-xs text-zinc-500 mt-1">
-                🧠 Problems: <span className="text-white">{team?.points[0]}</span> &nbsp;|&nbsp;
-                🚀 Hackathon: <span className="text-white">{team?.points[1]}</span>
+                🧠 Problems: <span className="text-white">{team?.points?.[0] ?? 0}</span> &nbsp;|&nbsp;
+                🚀 Hackathon: <span className="text-white">{team?.points?.[1] ?? 0}</span>
               </p>
+              {team?.hackathon && (
+                <p className="text-xs mt-2">
+                  <span className="text-zinc-400">🔗 Hackathon Link: </span>
+                  <Link
+                    href={team.hackathon}
+                    className="text-blue-400 hover:underline break-all"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {team.hackathon}
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
 
@@ -69,27 +83,38 @@ export default function TeamDashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
-            &lt;/&gt; Solve Problems
-          </Button>
-          <Button className="bg-purple-600 hover:bg-purple-700 text-white w-full">
-            🏆 Submit Hackathon
-          </Button>
-          <Button className="bg-yellow-600 hover:bg-yellow-700 text-white w-full">
-            🏅 View Leaderboard
-          </Button>
+          <Link href="/problems">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white w-full">
+              &lt;/&gt; Solve Problems
+            </Button>
+          </Link>
+          <Link href="/hackathon">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white w-full">
+              🏆 Submit Hackathon
+            </Button>
+          </Link>
+          <Link href="/scoreboard">
+            <Button className="bg-yellow-600 hover:bg-yellow-700 text-white w-full">
+              🏅 View Leaderboard
+            </Button>
+          </Link>
         </div>
 
         {/* Team Members */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-4">Team Members ({team?.members?.length || 1})</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            Team Members ({team?.members?.length || 1})
+          </h3>
           <ul className="space-y-2">
-            {user && (
-              <li className="bg-zinc-800 px-4 py-2 rounded-md text-sm">
-                {user.username} ({user.email})
+            {team?.members?.map((member, index) => (
+              <li
+                key={index}
+                className="bg-zinc-800 px-4 py-2 rounded-md text-sm"
+              >
+                {member}
+                {member === user?.username && " (you)"}
               </li>
-            )}
-            {/* Add full member list if desired */}
+            ))}
           </ul>
         </div>
       </section>
