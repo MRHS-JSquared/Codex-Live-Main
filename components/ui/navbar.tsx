@@ -98,7 +98,7 @@ export default function Navbar() {
           </>
         ) : (
           <>
-            <li className="text-blue-400">{user.email}</li>
+            <li className="text-blue-400">{user.username}</li>
             <li
               onClick={handleLogout}
               className="flex items-center gap-1 hover:text-white cursor-pointer transition"

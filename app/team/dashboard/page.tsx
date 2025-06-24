@@ -112,7 +112,7 @@ export default function TeamDashboard() {
                 className="bg-zinc-800 px-4 py-2 rounded-md text-sm"
               >
                 {member}
-                {member === user?.username && " (you)"}
+                {user?.username === member && " (you)"}
               </li>
             ))}
           </ul>
