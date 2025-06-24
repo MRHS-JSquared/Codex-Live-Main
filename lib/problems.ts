@@ -7,10 +7,14 @@ export type Problem = {
   difficulty: Difficulty;
   examples: { input: string; output: string }[];
   testCases: { input: string; output: string }[];
-  starterCode: Partial<Record<
-    "python" | "cpp" | "java" | "javascript" | "rust" | "csharp",
-    string
-  >>;
+  starterCode: {
+    python: string;
+    cpp: string;
+    java: string;
+    javascript: string;
+    rust: string;
+    csharp: string;
+  };
 };
 
 export const problems: Problem[] = [
@@ -485,7 +489,9 @@ export const problems: Problem[] = [
       python: `n = int(input())\n# Your code here`,
       cpp: `#include <iostream>\nusing namespace std;\nint main() {\n  int n;\n  cin >> n;\n  // Your code here\n}`,
       java: `import java.util.*;\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    int n = sc.nextInt();\n    // Your code here\n  }\n}`,
-      javascript: `const n = parseInt(readline());\n// Your code here`
+      javascript: `const n = parseInt(readline());\n// Your code here`,
+      rust: ``,
+      csharp: ``
     }
   },
   {
@@ -508,7 +514,9 @@ export const problems: Problem[] = [
       python: `n = int(input())\narr = list(map(int, input().split()))\n# Your code here`,
       cpp: `#include <iostream>\nusing namespace std;\nint main() {\n  int n, x;\n  cin >> n;\n  int arr[n];\n  for (int i = 0; i < n; ++i) cin >> arr[i];\n  // Your code here\n}`,
       java: `import java.util.*;\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    int n = sc.nextInt();\n    int[] arr = new int[n];\n    for (int i = 0; i < n; i++) arr[i] = sc.nextInt();\n    // Your code here\n  }\n}`,
-      javascript: `const n = parseInt(readline());\nconst arr = readline().split(" ").map(Number);\n// Your code here`
+      javascript: `const n = parseInt(readline());\nconst arr = readline().split(" ").map(Number);\n// Your code here`,
+      rust: ``,
+      csharp: ``
     }
   },
   {
@@ -531,7 +539,9 @@ export const problems: Problem[] = [
       python: `s = input()\n# Your code here`,
       cpp: `#include <iostream>\nusing namespace std;\nint main() {\n  string s;\n  cin >> s;\n  // Your code here\n}`,
       java: `import java.util.*;\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    String s = sc.next();\n    // Your code here\n  }\n}`,
-      javascript: `const s = readline();\n// Your code here`
+      javascript: `const s = readline();\n// Your code here`,
+      rust: ``,
+      csharp: ``
     }
   },
   {
@@ -554,7 +564,9 @@ export const problems: Problem[] = [
       python: `n = int(input())\nheights = list(map(int, input().split()))\n# Your code here`,
       cpp: `#include <iostream>\nusing namespace std;\nint main() {\n  int n;\n  cin >> n;\n  int h[n];\n  for (int i = 0; i < n; ++i) cin >> h[i];\n  // Your code here\n}`,
       java: `import java.util.*;\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    int n = sc.nextInt();\n    int[] h = new int[n];\n    for (int i = 0; i < n; i++) h[i] = sc.nextInt();\n    // Your code here\n  }\n}`,
-      javascript: `const n = parseInt(readline());\nconst h = readline().split(" ").map(Number);\n// Your code here`
+      javascript: `const n = parseInt(readline());\nconst h = readline().split(" ").map(Number);\n// Your code here`,
+      rust: ``,
+      csharp: ``
     }
   },
   {
@@ -577,7 +589,9 @@ export const problems: Problem[] = [
       python: `s = input()\n# Your code here`,
       cpp: `#include <iostream>\nusing namespace std;\nint main() {\n  string s;\n  cin >> s;\n  // Your code here\n}`,
       java: `import java.util.*;\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    String s = sc.next();\n    // Your code here\n  }\n}`,
-      javascript: `const s = readline();\n// Your code here`
+      javascript: `const s = readline();\n// Your code here`,
+      rust: ``,
+      csharp: ``
     }
   },
   {
