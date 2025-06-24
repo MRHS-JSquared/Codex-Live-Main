@@ -13,15 +13,10 @@ export default function HackathonPage() {
   const router = useRouter();
 
   const [repoLink, setRepoLink] = useState('');
-  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     if (!user) router.push('/login');
     else if (!team) router.push('/team');
-    else if (team.hackathon) {
-      setRepoLink(team.hackathon);
-      setSubmitted(true);
-    }
   }, [user, team, router]);
 
   const handleSubmit = () => {
@@ -49,7 +44,6 @@ export default function HackathonPage() {
     }));
 
     setTeam(updatedTeam);
-    setSubmitted(true);
     alert("✅ Hackathon project submitted!");
   };
 
@@ -69,7 +63,6 @@ export default function HackathonPage() {
             <li>Your repository must be public.</li>
             <li>Include a README with clear instructions and description of your project.</li>
             <li>Only one submission per team is allowed.</li>
-            <li>You may not change the submission after confirming.</li>
           </ul>
 
           <label className="block mb-2 text-sm font-medium text-white">GitHub Repository Link</label>
@@ -79,15 +72,13 @@ export default function HackathonPage() {
             onChange={(e) => setRepoLink(e.target.value)}
             className="w-full bg-zinc-800 text-white border border-zinc-700 rounded-md p-2 mb-4 text-sm"
             placeholder="https://github.com/your-team/hackathon-project"
-            disabled={submitted}
           />
 
           <Button
             onClick={handleSubmit}
-            disabled={submitted}
             className="w-full bg-purple-600 hover:bg-purple-700"
           >
-            {submitted ? 'Already Submitted' : 'Submit Hackathon'}
+            {'Submit Hackathon'}
           </Button>
         </div>
       </section>
