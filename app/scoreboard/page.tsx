@@ -63,7 +63,7 @@ export default function ScoreboardPage() {
                 let bg = '';
                 if (i === 0) bg = 'bg-yellow-600 text-black font-bold';
                 else if (i === 1) bg = 'bg-zinc-300 text-black font-bold';
-                else if (i === 2) bg = 'bg-orange-500 text-black font-bold';
+                else if (i === 2) bg = 'bg-brown-500 text-black font-bold';
                 else bg = 'bg-zinc-950 text-white';
 
                 return (
