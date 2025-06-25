@@ -22,10 +22,8 @@ export default function TeamDashboard() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
 
   useEffect(() => {
-
-    setTimeout(()=>{}, 200);
-
-    if (!user) router.push("/login");
+    setTimeout(()=>{
+      if (!user) router.push("/login");
     else if (!team) router.push("/team");
     else {
       const fetchUsers = async () => {
@@ -35,6 +33,7 @@ export default function TeamDashboard() {
       };
       fetchUsers();
     }
+    }, 1000)
   }, [user, team, router]);
 
   const copyToClipboard = () => {
