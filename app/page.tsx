@@ -16,6 +16,7 @@ export default function HomePage() {
         <Canvas camera={{ position: [0, 0, 15], fov: 60 }}>
           <Suspense fallback={null}>
             <GridScene />
+            <OrbitControls enableZoom={false} enablePan={false} />
           </Suspense>
         </Canvas>
 
