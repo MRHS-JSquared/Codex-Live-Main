@@ -46,7 +46,7 @@ export default function HomePage() {
   
     const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.4, 0.2);
     bloomPass.threshold = 0;
-    bloomPass.strength = 2;     // Bloom intensity
+    bloomPass.strength = 1;     // Bloom intensity
     bloomPass.radius = 1;
     composer.addPass(bloomPass);
   
@@ -76,7 +76,7 @@ export default function HomePage() {
   
     const bloomPointMaterial = new THREE.PointsMaterial({
       color: '#00ffff',
-      size: 0.4,
+      size: 0.15,
       transparent: true,
       opacity: 1.0,
       depthWrite: false
