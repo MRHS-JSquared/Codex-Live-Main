@@ -1,82 +1,95 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Points, PointMaterial } from '@react-three/drei';
+import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
-import gsap from 'gsap';
-import { Button } from '@/components/ui/button';
-import Navbar from '@/components/ui/navbar';
 import { motion } from 'framer-motion';
+import Navbar from '@/components/ui/navbar';
+import { Button } from '@/components/ui/button';
 
-function GridPoints() {
-  const ref = useRef<THREE.Points>(null);
-  const count = 600;
-  const radius = 3;
-  const positions = new Float32Array(count * 3);
+function Grid() {
+  const groupRef = useRef<THREE.Group>(null);
+  const mouse = useRef(new THREE.Vector2());
 
-  // Create a grid of points
-  for (let i = 0; i < count; i++) {
-    const row = Math.floor(i / 30);
-    const col = i % 30;
-    positions[i * 3] = (col - 15) * 0.4;
-    positions[i * 3 + 1] = (row - 10) * 0.4;
-    positions[i * 3 + 2] = 0;
+  // Grid config
+  const spacing = 2;
+  const gridSize = 10;
+
+  const points: THREE.Vector3[] = [];
+  for (let x = -gridSize; x <= gridSize; x++) {
+    for (let y = -gridSize; y <= gridSize; y++) {
+      points.push(new THREE.Vector3(x * spacing, y * spacing, 0));
+    }
   }
 
-  const mouse = { x: 0, y: 0 };
-
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    const handleMouseMove = (event: MouseEvent) => {
+      mouse.current.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.current.y = -(event.clientY / window.innerHeight) * 2 + 1;
     };
+
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   useFrame(() => {
-    if (!ref.current) return;
-    const positions = ref.current.geometry.attributes.position;
-    const originalZ = 0;
-
-    for (let i = 0; i < positions.count; i++) {
-      const x = positions.getX(i);
-      const y = positions.getY(i);
-
-      const dx = x - mouse.x * 10;
-      const dy = y - mouse.y * 10;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      const z = Math.max(Math.cos(dist * 1.5) * 1.5, originalZ);
-      positions.setZ(i, z);
-    }
-
-    positions.needsUpdate = true;
+    const group = groupRef.current;
+    if (!group) return;
+  
+    group.children.forEach((point) => {
+      if (point instanceof THREE.Mesh && point.material instanceof THREE.MeshBasicMaterial) {
+        const dist = point.position.distanceTo(
+          new THREE.Vector3(mouse.current.x * 20, mouse.current.y * 10, 0)
+        );
+        const scale = 1.5 - dist / 15;
+        const clamped = Math.max(0.5, Math.min(2, scale));
+        point.scale.set(clamped, clamped, clamped);
+  
+        point.material.color.setHSL(0.6, 1, Math.max(0.4, 1.5 - dist / 10));
+      }
+    });
   });
 
   return (
-    <Points ref={ref} positions={positions} stride={3}>
-      <PointMaterial color="#00ffff" size={0.08} sizeAttenuation depthWrite={false} transparent />
-    </Points>
+    <group ref={groupRef}>
+      {points.map((pos, i) => (
+        <mesh key={i} position={pos}>
+          <sphereGeometry args={[0.05, 6, 6]} />
+          <meshBasicMaterial color="#00ffff" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function BackgroundScene() {
+  return (
+    <Canvas
+      style={{
+        position: 'absolute',
+        top: '100px', // start below navbar
+        left: 0,
+        zIndex: 0,
+      }}
+      camera={{ position: [0, 0, 30], fov: 75 }}
+    >
+      <ambientLight intensity={0.6} />
+      <pointLight position={[0, 0, 10]} intensity={1.5} />
+      <Grid />
+    </Canvas>
   );
 }
 
 export default function HomePage() {
   return (
-    <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
+    <main className="relative bg-black text-white min-h-screen overflow-hidden">
       <Navbar />
 
-      {/* 3D Background Canvas */}
-      <div className="absolute top-[120px] left-0 w-full h-[600px] -z-10">
-        <Canvas camera={{ position: [0, 0, 10], fov: 60 }}>
-          <ambientLight intensity={0.5} />
-          <GridPoints />
-        </Canvas>
-      </div>
+      {/* 3D Background */}
+      <BackgroundScene />
 
-      {/* Foreground Content */}
-      <section className="flex flex-col items-center justify-center text-center flex-grow px-6 py-20 z-10">
+      {/* Foreground UI */}
+      <section className="relative z-10 flex flex-col items-center justify-center text-center px-6 pt-40 pb-24">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -91,7 +104,8 @@ export default function HomePage() {
         </p>
 
         <p className="mt-6 text-zinc-400 text-lg max-w-xl">
-          The ultimate competitive programming platform. Code, compete, and conquer challenging algorithms.
+          The ultimate competitive programming platform.<br />
+          Code, compete, and conquer challenging algorithms.
         </p>
 
         <Button className="mt-8 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 text-lg rounded-xl">
