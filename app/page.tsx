@@ -76,7 +76,7 @@ export default function HomePage() {
   
     const bloomPointMaterial = new THREE.PointsMaterial({
       color: '#00ffff',
-      size: 0.15,
+      size: 0.05,
       transparent: true,
       opacity: 1.0,
       depthWrite: false
