@@ -22,6 +22,9 @@ export default function TeamDashboard() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
 
   useEffect(() => {
+
+    setTimeout(()=>{}, 200);
+
     if (!user) router.push("/login");
     else if (!team) router.push("/team");
     else {
