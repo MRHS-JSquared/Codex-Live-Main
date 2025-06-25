@@ -37,7 +37,7 @@ export const problems: Problem[] = [
     ],
     starterCode: {
       python: `a, b = map(int, input().split())\n# TODO`,
-      cpp: `#include <iostream>\nusing namespace std;\nint main(){int a,b;cin>>a>>b; // TODO\n}\n`,
+      cpp: `#include <iostream>\nusing namespace std;\nint main() {\nint a,b;\ncin>>a>>b; \n// TODO\n}\n`,
       java: `import java.util.*; class Main{public static void main(String[] args){Scanner sc=new Scanner(System.in);int a=sc.nextInt(),b=sc.nextInt(); // TODO}}`,
       javascript: `const [a,b]=readline().split(" ").map(Number); // TODO`,
       rust: `use std::io; fn main(){let mut s=String::new();io::stdin().read_line(&mut s).unwrap();let v: Vec<i32>=s.split_whitespace().map(|x|x.parse().unwrap()).collect(); // TODO}`,
