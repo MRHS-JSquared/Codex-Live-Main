@@ -1,130 +1,82 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import Navbar from '@/components/ui/navbar';
+import { useRef, useEffect } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Points, PointMaterial } from '@react-three/drei';
 import * as THREE from 'three';
+import gsap from 'gsap';
+import { Button } from '@/components/ui/button';
+import Navbar from '@/components/ui/navbar';
+import { motion } from 'framer-motion';
 
-export default function HomePage() {
-  const mountRef = useRef<HTMLDivElement>(null);
+function GridPoints() {
+  const ref = useRef<THREE.Points>(null);
+  const count = 600;
+  const radius = 3;
+  const positions = new Float32Array(count * 3);
+
+  // Create a grid of points
+  for (let i = 0; i < count; i++) {
+    const row = Math.floor(i / 30);
+    const col = i % 30;
+    positions[i * 3] = (col - 15) * 0.4;
+    positions[i * 3 + 1] = (row - 10) * 0.4;
+    positions[i * 3 + 2] = 0;
+  }
+
+  const mouse = { x: 0, y: 0 };
 
   useEffect(() => {
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    camera.position.z = 20;
-
-    const renderer = new THREE.WebGLRenderer({ alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    mountRef.current?.appendChild(renderer.domElement);
-
-    // Generate grid of points
-    const gridSize = 40;
-    const spacing = 1;
-    const positions: number[] = [];
-
-    for (let x = -gridSize / 2; x < gridSize / 2; x++) {
-      for (let y = -gridSize / 2; y < gridSize / 2; y++) {
-        positions.push(x * spacing, y * spacing, 0);
-      }
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-
-    const material = new THREE.PointsMaterial({
-      color: new THREE.Color('#00ffff'),
-      size: 0.1,
-      transparent: true,
-      opacity: 0.7,
-    });
-
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
-
-    // Grid lines (faint)
-    const lineGeometry = new THREE.BufferGeometry();
-    const linePositions: number[] = [];
-
-    for (let i = -gridSize / 2; i <= gridSize / 2; i++) {
-      // horizontal lines
-      linePositions.push(-gridSize / 2 * spacing, i * spacing, 0, gridSize / 2 * spacing, i * spacing, 0);
-      // vertical lines
-      linePositions.push(i * spacing, -gridSize / 2 * spacing, 0, i * spacing, gridSize / 2 * spacing, 0);
-    }
-
-    lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-    const lineMaterial = new THREE.LineBasicMaterial({
-      color: new THREE.Color('#00ffff'),
-      transparent: true,
-      opacity: 0.03,
-    });
-    const lines = new THREE.LineSegments(lineGeometry, lineMaterial);
-    scene.add(lines);
-
-    // Mouse interaction
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    window.addEventListener('mousemove', (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-    });
-
-    const animate = () => {
-      raycaster.setFromCamera(mouse, camera);
-      const origin = raycaster.ray.origin;
-
-      const positions = geometry.attributes.position as THREE.BufferAttribute;
-      const count = positions.count;
-
-      for (let i = 0; i < count; i++) {
-        const x = positions.getX(i);
-        const y = positions.getY(i);
-        const z = positions.getZ(i);
-
-        const distance = Math.sqrt(
-          (origin.x - x) ** 2 + (origin.y - y) ** 2
-        );
-
-        const newZ = Math.exp(-distance * 2) * 1.5;
-        positions.setZ(i, newZ);
-      }
-
-      positions.needsUpdate = true;
-      renderer.render(scene, camera);
-      requestAnimationFrame(animate);
     };
-
-    animate();
-
-    const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      mountRef.current?.removeChild(renderer.domElement);
-    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+  useFrame(() => {
+    if (!ref.current) return;
+    const positions = ref.current.geometry.attributes.position;
+    const originalZ = 0;
+
+    for (let i = 0; i < positions.count; i++) {
+      const x = positions.getX(i);
+      const y = positions.getY(i);
+
+      const dx = x - mouse.x * 10;
+      const dy = y - mouse.y * 10;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      const z = Math.max(Math.cos(dist * 1.5) * 1.5, originalZ);
+      positions.setZ(i, z);
+    }
+
+    positions.needsUpdate = true;
+  });
+
+  return (
+    <Points ref={ref} positions={positions} stride={3}>
+      <PointMaterial color="#00ffff" size={0.08} sizeAttenuation depthWrite={false} transparent />
+    </Points>
+  );
+}
+
+export default function HomePage() {
   return (
     <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
       <Navbar />
 
-      <div ref={mountRef} className="absolute inset-0 top-[100px] z-0 pointer-events-none" />
+      {/* 3D Background Canvas */}
+      <div className="absolute top-[120px] left-0 w-full h-[600px] -z-10">
+        <Canvas camera={{ position: [0, 0, 10], fov: 60 }}>
+          <ambientLight intensity={0.5} />
+          <GridPoints />
+        </Canvas>
+      </div>
 
-      <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
+      {/* Foreground Content */}
+      <section className="flex flex-col items-center justify-center text-center flex-grow px-6 py-20 z-10">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

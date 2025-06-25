@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
+    "@react-three/drei": "^9.56.13",
+    "@react-three/fiber": "^8.13.6",
     "@supabase/supabase-js": "^2.50.0",
     "@types/node": "20.6.2",
     "@types/react": "18.2.22",
