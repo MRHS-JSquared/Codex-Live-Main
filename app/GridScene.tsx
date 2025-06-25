@@ -65,10 +65,10 @@ export default function GridScene() {
         </bufferGeometry>
         <pointsMaterial
           color="#00ffff"
-          size={0.1}
+          size={0.5}
           sizeAttenuation
           transparent
-          opacity={0.8}
+          opacity={1}
         />
       </points>
 
@@ -80,7 +80,7 @@ export default function GridScene() {
           color="#00ffff"
           lineWidth={1}
           transparent
-          opacity={0.1}
+          opacity={0.5}
           derivatives={100}
         />
       ))}
