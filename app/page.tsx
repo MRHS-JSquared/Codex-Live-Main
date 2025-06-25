@@ -44,11 +44,13 @@ export default function HomePage() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 
+    // Composer & Bloom
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.5, 1, 0);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 3.5, 1.2, 0.1); // strong bloom
     composer.addPass(bloomPass);
 
+    // Blue glowing points
     const texture = createRoundTexture();
     const material = new THREE.PointsMaterial({
       size: 0.5,
@@ -62,7 +64,8 @@ export default function HomePage() {
     const numPoints = 300;
     const positions: number[] = [];
     const targets: THREE.Vector3[] = [];
-    const velocities: THREE.Vector3[] = [];
+    const wiggleOffsets: number[] = [];
+    const basePositions: THREE.Vector3[] = [];
 
     for (let i = 0; i < numPoints; i++) {
       const x = THREE.MathUtils.randFloatSpread(50);
@@ -70,7 +73,8 @@ export default function HomePage() {
       const z = THREE.MathUtils.randFloatSpread(30);
       positions.push(x, y, z);
       targets.push(new THREE.Vector3(x, y, z));
-      velocities.push(new THREE.Vector3());
+      basePositions.push(new THREE.Vector3(x, y, z));
+      wiggleOffsets.push(Math.random() * 100); // unique per point
     }
 
     const geometry = new THREE.BufferGeometry();
@@ -83,40 +87,40 @@ export default function HomePage() {
     const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
     const mouse3D = new THREE.Vector3();
 
+    let time = 0;
+
     const animate = () => {
       requestAnimationFrame(animate);
+      time += 0.01;
 
-      // Update point positions toward target
       const posAttr = geometry.getAttribute('position');
+
       for (let i = 0; i < numPoints; i++) {
         const i3 = i * 3;
-        const current = new THREE.Vector3(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
-        const target = targets[i];
 
-        // Influence by mouse if close enough
-        const dist = current.distanceTo(mouse3D);
-        if (dist < 5) {
-          const dir = new THREE.Vector3().subVectors(mouse3D, current).multiplyScalar(0.2);
-          targets[i] = target.clone().add(dir);
+        // wiggle based on time
+        const base = basePositions[i];
+        const wiggle = 0.3 * Math.sin(time * 2 + wiggleOffsets[i]);
+
+        let pos = new THREE.Vector3(base.x, base.y + wiggle, base.z);
+
+        // if near cursor, update base and target position toward it
+        const distToMouse = pos.distanceTo(mouse3D);
+        if (distToMouse < 5) {
+          base.lerp(mouse3D, 0.05);
         }
 
-        velocities[i].add(new THREE.Vector3().subVectors(target, current).multiplyScalar(0.05));
-        velocities[i].multiplyScalar(0.9); // damping
-        current.add(velocities[i]);
-
-        posAttr.setXYZ(i, current.x, current.y, current.z);
+        posAttr.setXYZ(i, base.x, base.y + wiggle, base.z);
       }
 
       posAttr.needsUpdate = true;
       composer.render();
     };
-
     animate();
 
     const onMouseMove = (e: MouseEvent) => {
       mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
       raycaster.setFromCamera(mouse, camera);
       raycaster.ray.intersectPlane(plane, mouse3D);
       gsap.to(mouse3D, {
