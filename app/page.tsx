@@ -16,32 +16,44 @@ export default function HomePage() {
     const scene = new THREE.Scene();
     scene.fog = new THREE.Fog('#000000', 10, 50);
 
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      100
-    );
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 5, 15);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setClearColor(0x000000, 0); // Transparent background
+    renderer.setClearColor(0x000000, 0); // transparent
 
-    // Grid geometry
-    const geometry = new THREE.PlaneGeometry(30, 30, 50, 50);
-    const material = new THREE.MeshBasicMaterial({
-      color: '#00ffff',
-      wireframe: true,
+    const gridSize = 30;
+    const divisions = 30;
+    const spacing = gridSize / divisions;
+    const halfSize = gridSize / 2;
+    const lineMaterial = new THREE.LineBasicMaterial({
+      color: new THREE.Color('#00ffff'),
       transparent: true,
       opacity: 0.2,
     });
 
-    const grid = new THREE.Mesh(geometry, material);
-    grid.rotation.x = -Math.PI / 2; // rotate to lay flat
-    scene.add(grid);
+    // Vertical lines
+    for (let i = -halfSize; i <= halfSize; i += spacing) {
+      const points = [];
+      points.push(new THREE.Vector3(i, 0, -halfSize));
+      points.push(new THREE.Vector3(i, 0, halfSize));
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const line = new THREE.Line(geometry, lineMaterial);
+      scene.add(line);
+    }
+
+    // Horizontal lines
+    for (let i = -halfSize; i <= halfSize; i += spacing) {
+      const points = [];
+      points.push(new THREE.Vector3(-halfSize, 0, i));
+      points.push(new THREE.Vector3(halfSize, 0, i));
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const line = new THREE.Line(geometry, lineMaterial);
+      scene.add(line);
+    }
 
     const animate = () => {
       requestAnimationFrame(animate);
@@ -56,17 +68,14 @@ export default function HomePage() {
     };
 
     window.addEventListener('resize', onResize);
-
-    return () => {
-      window.removeEventListener('resize', onResize);
-    };
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   return (
     <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
       <Navbar />
 
-      {/* Background Canvas */}
+      {/* Background canvas */}
       <canvas
         ref={canvasRef}
         className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
