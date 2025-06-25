@@ -51,12 +51,19 @@ export default function HomePage() {
     const jaggedLineMaterial = new THREE.LineBasicMaterial({
       color: new THREE.Color('#ffffff'),
       transparent: true,
-      opacity: 0.2,
+      opacity: 0.8,
     });
 
-    const pointMaterial = new THREE.PointsMaterial({
+    const flatPointMaterial = new THREE.PointsMaterial({
       color: '#00ffff',
       size: 0.05,
+      transparent: true,
+      opacity: 1.0,
+    });
+
+    const jaggedPointMaterial = new THREE.PointsMaterial({
+      color: '#00ffff',
+      size: 1,
       transparent: true,
       opacity: 1.0,
     });
@@ -82,7 +89,7 @@ export default function HomePage() {
 
     const flatPointGeom = new THREE.BufferGeometry();
     flatPointGeom.setAttribute('position', new THREE.Float32BufferAttribute(flatPointPositions, 3));
-    scene.add(new THREE.Points(flatPointGeom, pointMaterial));
+    scene.add(new THREE.Points(flatPointGeom, flatPointMaterial));
 
     // Jagged elevated grid (very wide spaced)
     const jaggedSpacing = 3;
@@ -113,7 +120,7 @@ export default function HomePage() {
 
     const jaggedPointGeom = new THREE.BufferGeometry();
     jaggedPointGeom.setAttribute('position', new THREE.Float32BufferAttribute(jaggedPointPositions, 3));
-    scene.add(new THREE.Points(jaggedPointGeom, pointMaterial));
+    scene.add(new THREE.Points(jaggedPointGeom, jaggedPointMaterial));
 
     const animate = () => {
       requestAnimationFrame(animate);
