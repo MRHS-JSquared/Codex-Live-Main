@@ -38,7 +38,7 @@ export default function HomePage() {
     renderer.setClearColor(0x000000, 0);
 
     const lineMaterial1 = new THREE.LineBasicMaterial({ color: '#00ffff', opacity: 0.15, transparent: true });
-    const lineMaterial2 = new THREE.LineBasicMaterial({ color: '#ffffff', opacity: 0.07, transparent: true });
+    const lineMaterial2 = new THREE.LineBasicMaterial({ color: '#ffffff', opacity: 0.2, transparent: true });
 
     const flatGridSize = 30;
     const flatDivisions = 30;
