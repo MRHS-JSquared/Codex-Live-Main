@@ -9,16 +9,18 @@ import gsap from 'gsap';
 
 export default function HomePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
+
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) {
-      alert("asd");
-      return;
-    };
+    if (!canvas) return;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
     camera.position.z = 5;
 
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
@@ -26,7 +28,13 @@ export default function HomePage() {
     renderer.setPixelRatio(window.devicePixelRatio);
 
     const geometry = new THREE.PlaneGeometry(20, 20, 40, 40);
-    const material = new THREE.MeshBasicMaterial({ wireframe: true, color: '#00bcd4' });
+    const material = new THREE.MeshBasicMaterial({
+      wireframe: true,
+      color: '#00bcd4',
+      transparent: true,
+      opacity: 0.3,
+    });
+
     const grid = new THREE.Mesh(geometry, material);
     scene.add(grid);
 
@@ -43,9 +51,9 @@ export default function HomePage() {
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
       gsap.to(grid.rotation, {
-        x: mouse.y * 0.2,
-        y: mouse.x * 0.2,
-        duration: 0.5,
+        x: mouse.y * 0.3,
+        y: mouse.x * 0.3,
+        duration: 0.6,
         ease: 'power2.out',
       });
     };
@@ -66,10 +74,17 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="bg-black text-white min-h-screen flex flex-col">
+    <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
       <Navbar />
 
-      <section className="flex flex-col items-center justify-center text-center flex-grow px-6 py-20 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-zinc-900 via-black to-black">
+      {/* 👇 Background Canvas */}
+      <canvas
+        ref={canvasRef}
+        className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
+      />
+
+      {/* 👇 Foreground UI */}
+      <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
