@@ -3,13 +3,15 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Navbar from "@/components/ui/navbar";
+import ThreeBackground from "@/components/ui/ThreeBackground";
 
 export default function HomePage() {
   return (
-    <main className="bg-black text-white min-h-screen flex flex-col">
+    <main className="bg-black text-white min-h-screen flex flex-col relative overflow-hidden">
+      <ThreeBackground />
       <Navbar />
 
-      <section className="flex flex-col items-center justify-center text-center flex-grow px-6 py-20 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-zinc-900 via-black to-black">
+      <section className="flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
