@@ -30,7 +30,7 @@ export default function LoginPage() {
       setShowVerifyMessage(true);
       setError("Please verify your email");
     } else if (success === true) {
-      router.push("/");
+      router.push("/team");
     } else {
       setError("Invalid credentials.");
     }

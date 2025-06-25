@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user?.email) return false;
 
-    if (!data.user.email_confirmed_at) {
+    if (!data.user.confirmed_at) {
       await supabase.auth.signOut(); // ensure no session persists
       return "unverified";
     }
