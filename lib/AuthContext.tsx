@@ -76,14 +76,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string): Promise<boolean | "unverified"> => {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (!data.user?.email) return false;
-
-    if (!data.user.confirmed_at) {
+    if (!data.user?.confirmed_at) {
       await supabase.auth.signOut(); // ensure no session persists
       return "unverified";
     }
 
-    if (error) return false;
+    if (error || !data.user?.email) return false;
 
     const profile = await fetchUserProfile(data.user.email);
     if (profile) {
