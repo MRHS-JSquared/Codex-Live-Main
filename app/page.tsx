@@ -69,14 +69,14 @@ export default function HomePage() {
   
     const flatPointMaterial = new THREE.PointsMaterial({
       color: '#00ffff',
-      size: 1.5,
+      size: 0.05,
       transparent: true,
       opacity: 1.0,
     });
   
     const bloomPointMaterial = new THREE.PointsMaterial({
       color: '#00ffff',
-      size: 0.1,
+      size: 0.3,
       transparent: true,
       opacity: 1.0,
       depthWrite: false
