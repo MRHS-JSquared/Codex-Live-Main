@@ -81,7 +81,7 @@ export default function GridScene() {
           lineWidth={1}
           transparent
           opacity={0.1}
-          derivatives={1}
+          derivatives={100}
         />
       ))}
     </>
