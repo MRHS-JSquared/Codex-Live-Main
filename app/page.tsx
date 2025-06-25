@@ -9,6 +9,25 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
+function createRoundTexture(): THREE.Texture {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext('2d')!;
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  gradient.addColorStop(0, 'white');
+  gradient.addColorStop(1, 'transparent');
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+
+  const texture = new THREE.Texture(canvas);
+  texture.needsUpdate = true;
+  return texture;
+}
+
 function generateJaggedLine(start: THREE.Vector3, end: THREE.Vector3, segments: number, amplitude: number) {
   const points = [];
   for (let i = 0; i <= segments; i++) {
@@ -40,14 +59,10 @@ export default function HomePage() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setClearColor(0x000000, 0);
   
-    // Post-processing
+    // Post-processing for bloom
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-  
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.4, 0.2);
-    bloomPass.threshold = 0;
-    bloomPass.strength = 1;     // Bloom intensity
-    bloomPass.radius = 1;
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.6, 0.0);
     composer.addPass(bloomPass);
   
     const flatGridSize = 30;
@@ -62,9 +77,9 @@ export default function HomePage() {
     });
   
     const jaggedLineMaterial = new THREE.LineBasicMaterial({
-      color: new THREE.Color('#ffffff'),
+      color: new THREE.Color('#d1d5db'), // Tailwind gray-300
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.4,
     });
   
     const flatPointMaterial = new THREE.PointsMaterial({
@@ -72,20 +87,27 @@ export default function HomePage() {
       size: 0.05,
       transparent: true,
       opacity: 1.0,
+      sizeAttenuation: true
     });
   
-    const bloomPointMaterial = new THREE.PointsMaterial({
-      color: '#00ffff',
+    const jaggedPointMaterial = new THREE.PointsMaterial({
+      color: '#3b82f6', // Tailwind blue-500
       size: 0.3,
       transparent: true,
       opacity: 1.0,
+      sizeAttenuation: true,
       depthWrite: false
     });
+  
+    // Round shape for points
+    jaggedPointMaterial.map = createRoundTexture();
+    jaggedPointMaterial.alphaTest = 0.5;
+    jaggedPointMaterial.transparent = true;
   
     const flatPointPositions: number[] = [];
     const jaggedPointPositions: number[] = [];
   
-    // Flat Grid
+    // Flat Grid + Points
     for (let i = -half; i <= half; i += flatSpacing) {
       const hPoints = [new THREE.Vector3(i, 0, -half), new THREE.Vector3(i, 0, half)];
       const vPoints = [new THREE.Vector3(-half, 0, i), new THREE.Vector3(half, 0, i)];
@@ -105,7 +127,8 @@ export default function HomePage() {
     const jaggedSpacing = 3;
     const jaggedSegments = 20;
     const amplitude = 0.5;
-    const yElevation = 10;
+    const yElevation = 6; // moved closer to camera
+  
     for (let i = -half; i <= half; i += jaggedSpacing) {
       const hPoints = generateJaggedLine(
         new THREE.Vector3(i, yElevation, -half),
@@ -129,7 +152,8 @@ export default function HomePage() {
   
     const jaggedPointGeom = new THREE.BufferGeometry();
     jaggedPointGeom.setAttribute('position', new THREE.Float32BufferAttribute(jaggedPointPositions, 3));
-    scene.add(new THREE.Points(jaggedPointGeom, bloomPointMaterial));
+    const jaggedPoints = new THREE.Points(jaggedPointGeom, jaggedPointMaterial);
+    scene.add(jaggedPoints);
   
     const animate = () => {
       requestAnimationFrame(animate);
