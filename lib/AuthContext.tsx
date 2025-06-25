@@ -58,18 +58,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loadSession();
 
     // Optional: listen to auth changes (for example after logout in another tab)
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user?.email) {
-        const profile = await fetchUserProfile(session.user.email);
-        if (profile) setUser(profile);
-      } else {
-        setUser(null);
-      }
-    });
+    // const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    //   if (session?.user?.email) {
+    //     const profile = await fetchUserProfile(session.user.email);
+    //     if (profile) setUser(profile);
+    //   } else {
+    //     setUser(null);
+    //   }
+    // });
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    // return () => {
+    //   listener.subscription.unsubscribe();
+    // };
   }, []);
 
   // Login
