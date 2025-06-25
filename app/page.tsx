@@ -59,11 +59,11 @@ export default function HomePage() {
     // Jagged elevated grid (very wide spaced)
     const jaggedSpacing = 3;
     const jaggedSegments = 20;
-    const amplitude = 0.3;
+    const amplitude = 10;
     for (let i = -half; i <= half; i += jaggedSpacing) {
       const hPoints = generateJaggedLine(
-        new THREE.Vector3(i, 2, -half),
-        new THREE.Vector3(i, 2, half),
+        new THREE.Vector3(i, 10, -half),
+        new THREE.Vector3(i, 10, half),
         jaggedSegments,
         amplitude
       );
