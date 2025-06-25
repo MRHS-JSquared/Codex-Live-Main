@@ -37,29 +37,58 @@ export default function HomePage() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setClearColor(0x000000, 0);
 
-    const lineMaterial1 = new THREE.LineBasicMaterial({ color: '#00ffff', opacity: 0.15, transparent: true });
-    const lineMaterial2 = new THREE.LineBasicMaterial({ color: '#ffffff', opacity: 0.2, transparent: true });
-
     const flatGridSize = 30;
     const flatDivisions = 30;
     const flatSpacing = flatGridSize / flatDivisions;
     const half = flatGridSize / 2;
 
+    const flatLineMaterial = new THREE.LineBasicMaterial({
+      color: new THREE.Color('#00ffff'),
+      transparent: true,
+      opacity: 0.15,
+    });
+
+    const jaggedLineMaterial = new THREE.LineBasicMaterial({
+      color: new THREE.Color('#ffffff'),
+      transparent: true,
+      opacity: 0.2,
+    });
+
+    const pointMaterial = new THREE.PointsMaterial({
+      color: '#00ffff',
+      size: 0.05,
+      transparent: true,
+      opacity: 1.0,
+    });
+
+    const pointGeometry = new THREE.BufferGeometry();
+    const pointPositions: number[] = [];
+
     // Flat grid (floor)
     for (let i = -half; i <= half; i += flatSpacing) {
       const hPoints = [new THREE.Vector3(i, 0, -half), new THREE.Vector3(i, 0, half)];
       const hGeom = new THREE.BufferGeometry().setFromPoints(hPoints);
-      scene.add(new THREE.Line(hGeom, lineMaterial1));
+      scene.add(new THREE.Line(hGeom, flatLineMaterial));
 
       const vPoints = [new THREE.Vector3(-half, 0, i), new THREE.Vector3(half, 0, i)];
       const vGeom = new THREE.BufferGeometry().setFromPoints(vPoints);
-      scene.add(new THREE.Line(vGeom, lineMaterial1));
+      scene.add(new THREE.Line(vGeom, flatLineMaterial));
+
+      // Points at intersections
+      for (let j = -half; j <= half; j += flatSpacing) {
+        pointPositions.push(i, 0.01, j); // slightly raised for visibility
+      }
     }
+
+    pointGeometry.setAttribute('position', new THREE.Float32BufferAttribute(pointPositions, 3));
+    const glowingPoints = new THREE.Points(pointGeometry, pointMaterial);
+    scene.add(glowingPoints);
 
     // Jagged elevated grid (very wide spaced)
     const jaggedSpacing = 3;
     const jaggedSegments = 20;
-    const amplitude = 10;
+    const amplitude = 3;
+
     for (let i = -half; i <= half; i += jaggedSpacing) {
       const hPoints = generateJaggedLine(
         new THREE.Vector3(i, 10, -half),
@@ -68,16 +97,16 @@ export default function HomePage() {
         amplitude
       );
       const hGeom = new THREE.BufferGeometry().setFromPoints(hPoints);
-      scene.add(new THREE.Line(hGeom, lineMaterial2));
+      scene.add(new THREE.Line(hGeom, jaggedLineMaterial));
 
       const vPoints = generateJaggedLine(
-        new THREE.Vector3(-half, 2, i),
-        new THREE.Vector3(half, 2, i),
+        new THREE.Vector3(-half, 10, i),
+        new THREE.Vector3(half, 10, i),
         jaggedSegments,
         amplitude
       );
       const vGeom = new THREE.BufferGeometry().setFromPoints(vPoints);
-      scene.add(new THREE.Line(vGeom, lineMaterial2));
+      scene.add(new THREE.Line(vGeom, jaggedLineMaterial));
     }
 
     const animate = () => {
