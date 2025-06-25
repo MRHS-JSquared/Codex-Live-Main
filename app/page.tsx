@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/ui/navbar';
 import * as THREE from 'three';
-import gsap from 'gsap';
 
 export default function HomePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -15,30 +14,34 @@ export default function HomePage() {
     if (!canvas) return;
 
     const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog('#000000', 10, 50);
+
     const camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      100
     );
-    camera.position.z = 5;
+    camera.position.set(0, 5, 15);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(0x000000, 0); // Transparent background
 
-    const geometry = new THREE.PlaneGeometry(20, 20, 40, 40);
+    // Grid geometry
+    const geometry = new THREE.PlaneGeometry(30, 30, 50, 50);
     const material = new THREE.MeshBasicMaterial({
+      color: '#00ffff',
       wireframe: true,
-      color: '#00bcd4',
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.2,
     });
 
     const grid = new THREE.Mesh(geometry, material);
+    grid.rotation.x = -Math.PI / 2; // rotate to lay flat
     scene.add(grid);
-
-    const mouse = { x: 0, y: 0 };
 
     const animate = () => {
       requestAnimationFrame(animate);
@@ -46,29 +49,15 @@ export default function HomePage() {
     };
     animate();
 
-    const onMouseMove = (e: MouseEvent) => {
-      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-      gsap.to(grid.rotation, {
-        x: mouse.y * 0.3,
-        y: mouse.x * 0.3,
-        duration: 0.6,
-        ease: 'power2.out',
-      });
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-
     const onResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
+
     window.addEventListener('resize', onResize);
 
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('resize', onResize);
     };
   }, []);
@@ -77,13 +66,13 @@ export default function HomePage() {
     <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
       <Navbar />
 
-      {/* 👇 Background Canvas */}
+      {/* Background Canvas */}
       <canvas
         ref={canvasRef}
         className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
       />
 
-      {/* 👇 Foreground UI */}
+      {/* Foreground UI */}
       <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
