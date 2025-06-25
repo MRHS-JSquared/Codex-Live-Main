@@ -20,20 +20,34 @@ export default function TeamDashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true); // 🛑 loading guard
 
   useEffect(() => {
-    setTimeout(()=>{
-      if (!user) router.push("/login");
-    else if (!team) router.push("/team");
-    else {
-      const fetchUsers = async () => {
-        const { data, error } = await supabase.from("users").select("email, username");
-        if (error) console.error("Failed to fetch users:", error.message);
-        else setAllUsers(data || []);
-      };
-      fetchUsers();
-    }
-    }, 1000)
+    const checkAndFetch = async () => {
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      if (!team) {
+        router.push("/team");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("email, username");
+
+      if (error) {
+        console.error("Failed to fetch users:", error.message);
+      } else {
+        setAllUsers(data || []);
+      }
+
+      setLoading(false); // ✅ Done loading
+    };
+
+    checkAndFetch();
   }, [user, team, router]);
 
   const copyToClipboard = () => {
@@ -43,6 +57,8 @@ export default function TeamDashboard() {
   const getUsername = (email: string) => {
     return allUsers.find((u) => u.email === email)?.username || email;
   };
+
+  if (loading) return <div className="text-white p-6">Loading...</div>;
 
   return (
     <main className="bg-black text-white min-h-screen">
