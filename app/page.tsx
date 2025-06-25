@@ -6,6 +6,18 @@ import { motion } from 'framer-motion';
 import Navbar from '@/components/ui/navbar';
 import * as THREE from 'three';
 
+function generateJaggedLine(start: THREE.Vector3, end: THREE.Vector3, segments: number, amplitude: number) {
+  const points = [];
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const x = THREE.MathUtils.lerp(start.x, end.x, t);
+    const z = THREE.MathUtils.lerp(start.z, end.z, t);
+    const y = (Math.random() - 0.5) * amplitude;
+    points.push(new THREE.Vector3(x, y, z));
+  }
+  return points;
+}
+
 export default function HomePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -23,36 +35,49 @@ export default function HomePage() {
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setClearColor(0x000000, 0); // transparent
+    renderer.setClearColor(0x000000, 0);
 
-    const gridSize = 30;
-    const divisions = 30;
-    const spacing = gridSize / divisions;
-    const halfSize = gridSize / 2;
-    const lineMaterial = new THREE.LineBasicMaterial({
-      color: new THREE.Color('#00ffff'),
-      transparent: true,
-      opacity: 0.2,
-    });
+    const lineMaterial1 = new THREE.LineBasicMaterial({ color: '#00ffff', opacity: 0.15, transparent: true });
+    const lineMaterial2 = new THREE.LineBasicMaterial({ color: '#ffffff', opacity: 0.07, transparent: true });
 
-    // Vertical lines
-    for (let i = -halfSize; i <= halfSize; i += spacing) {
-      const points = [];
-      points.push(new THREE.Vector3(i, 0, -halfSize));
-      points.push(new THREE.Vector3(i, 0, halfSize));
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const line = new THREE.Line(geometry, lineMaterial);
-      scene.add(line);
+    const flatGridSize = 30;
+    const flatDivisions = 30;
+    const flatSpacing = flatGridSize / flatDivisions;
+    const half = flatGridSize / 2;
+
+    // Flat grid (floor)
+    for (let i = -half; i <= half; i += flatSpacing) {
+      const hPoints = [new THREE.Vector3(i, 0, -half), new THREE.Vector3(i, 0, half)];
+      const hGeom = new THREE.BufferGeometry().setFromPoints(hPoints);
+      scene.add(new THREE.Line(hGeom, lineMaterial1));
+
+      const vPoints = [new THREE.Vector3(-half, 0, i), new THREE.Vector3(half, 0, i)];
+      const vGeom = new THREE.BufferGeometry().setFromPoints(vPoints);
+      scene.add(new THREE.Line(vGeom, lineMaterial1));
     }
 
-    // Horizontal lines
-    for (let i = -halfSize; i <= halfSize; i += spacing) {
-      const points = [];
-      points.push(new THREE.Vector3(-halfSize, 0, i));
-      points.push(new THREE.Vector3(halfSize, 0, i));
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const line = new THREE.Line(geometry, lineMaterial);
-      scene.add(line);
+    // Jagged elevated grid (very wide spaced)
+    const jaggedSpacing = 3;
+    const jaggedSegments = 20;
+    const amplitude = 0.3;
+    for (let i = -half; i <= half; i += jaggedSpacing) {
+      const hPoints = generateJaggedLine(
+        new THREE.Vector3(i, 2, -half),
+        new THREE.Vector3(i, 2, half),
+        jaggedSegments,
+        amplitude
+      );
+      const hGeom = new THREE.BufferGeometry().setFromPoints(hPoints);
+      scene.add(new THREE.Line(hGeom, lineMaterial2));
+
+      const vPoints = generateJaggedLine(
+        new THREE.Vector3(-half, 2, i),
+        new THREE.Vector3(half, 2, i),
+        jaggedSegments,
+        amplitude
+      );
+      const vGeom = new THREE.BufferGeometry().setFromPoints(vPoints);
+      scene.add(new THREE.Line(vGeom, lineMaterial2));
     }
 
     const animate = () => {
@@ -75,13 +100,13 @@ export default function HomePage() {
     <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
       <Navbar />
 
-      {/* Background canvas */}
+      {/* 3D Canvas */}
       <canvas
         ref={canvasRef}
         className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
       />
 
-      {/* Foreground UI */}
+      {/* Foreground content */}
       <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
