@@ -11,6 +11,8 @@ export default function LoginPage() {
   const { login } = useAuth(); // now uses Supabase under the hood
   const router = useRouter();
   const [error, setError] = useState("");
+  const [showVerifyMessage, setShowVerifyMessage] = useState(false);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,10 +26,13 @@ export default function LoginPage() {
     }
 
     const success = await login(email, password); // now async
-    if (!success) {
-      setError("Invalid email or password.");
-    } else {
+    if (success === "unverified") {
+      setShowVerifyMessage(true);
+      setError("Please verify your email");
+    } else if (success === true) {
       router.push("/");
+    } else {
+      setError("Invalid credentials.");
     }
   };
 
@@ -48,6 +53,12 @@ export default function LoginPage() {
 
           {error && (
             <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+          )}
+          
+          {showVerifyMessage && (
+            <div className="text-yellow-400 text-sm text-center mb-4">
+              Please verify your email and then try logging in.
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">

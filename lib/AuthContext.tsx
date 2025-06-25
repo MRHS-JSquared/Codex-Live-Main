@@ -13,7 +13,7 @@ type User = {
 
 type AuthContextType = {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean | "unverified">;
   signup: (email: string, password: string, username: string) => Promise<boolean>;
   logout: () => Promise<void>;
 };
@@ -73,9 +73,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Login
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean | "unverified"> => {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user?.email) return false;
+
+    if (!data.user.email_confirmed_at) {
+      await supabase.auth.signOut(); // ensure no session persists
+      return "unverified";
+    }
 
     const profile = await fetchUserProfile(data.user.email);
     if (profile) {
@@ -103,7 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-    setUser({ email, username, teamCode: undefined });
+    //setUser({ email, username, teamCode: undefined });
     return true;
   };
 
