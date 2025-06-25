@@ -1,74 +1,20 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import Navbar from '@/components/ui/navbar';
-import * as THREE from 'three';
-import gsap from 'gsap';
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import Navbar from "@/components/ui/navbar";
+import dynamic from "next/dynamic";
+
+// Import Three.js background lazily
+const ThreeBackground = dynamic(() => import("@/components/ui/ThreeBackground"), { ssr: false });
 
 export default function HomePage() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 5;
-
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-
-    const geometry = new THREE.PlaneGeometry(20, 20, 40, 40);
-    const material = new THREE.MeshBasicMaterial({ wireframe: true, color: '#00bcd4' });
-    const grid = new THREE.Mesh(geometry, material);
-    scene.add(grid);
-
-    const mouse = { x: 0, y: 0 };
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    const onMouseMove = (e: MouseEvent) => {
-      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-      gsap.to(grid.rotation, {
-        x: mouse.y * 0.2,
-        y: mouse.x * 0.2,
-        duration: 0.5,
-        ease: 'power2.out',
-      });
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-
-    const onResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener('resize', onResize);
-
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('resize', onResize);
-    };
-  }, []);
-
   return (
-    <main className="relative bg-black text-white min-h-screen overflow-hidden">
-      <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full z-0" />
-
+    <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
       <Navbar />
+      <ThreeBackground />
 
-      <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
+      <section className="flex flex-col items-center justify-center text-center flex-grow px-6 py-20 z-10 relative">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
