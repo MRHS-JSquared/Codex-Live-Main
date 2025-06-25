@@ -61,8 +61,8 @@ export default function HomePage() {
       opacity: 1.0,
     });
 
-    const pointGeometry = new THREE.BufferGeometry();
-    const pointPositions: number[] = [];
+    const flatPointPositions: number[] = [];
+    const jaggedPointPositions: number[] = [];
 
     // Flat grid (floor)
     for (let i = -half; i <= half; i += flatSpacing) {
@@ -74,20 +74,20 @@ export default function HomePage() {
       const vGeom = new THREE.BufferGeometry().setFromPoints(vPoints);
       scene.add(new THREE.Line(vGeom, flatLineMaterial));
 
-      // Points at intersections
+      // Points at intersections (flat grid)
       for (let j = -half; j <= half; j += flatSpacing) {
-        pointPositions.push(i, 0.01, j); // slightly raised for visibility
+        flatPointPositions.push(i, 0.01, j);
       }
     }
 
-    pointGeometry.setAttribute('position', new THREE.Float32BufferAttribute(pointPositions, 3));
-    const glowingPoints = new THREE.Points(pointGeometry, pointMaterial);
-    scene.add(glowingPoints);
+    const flatPointGeom = new THREE.BufferGeometry();
+    flatPointGeom.setAttribute('position', new THREE.Float32BufferAttribute(flatPointPositions, 3));
+    scene.add(new THREE.Points(flatPointGeom, pointMaterial));
 
     // Jagged elevated grid (very wide spaced)
     const jaggedSpacing = 3;
     const jaggedSegments = 20;
-    const amplitude = 3;
+    const amplitude = 1.5;
 
     for (let i = -half; i <= half; i += jaggedSpacing) {
       const hPoints = generateJaggedLine(
@@ -98,6 +98,7 @@ export default function HomePage() {
       );
       const hGeom = new THREE.BufferGeometry().setFromPoints(hPoints);
       scene.add(new THREE.Line(hGeom, jaggedLineMaterial));
+      hPoints.forEach(p => jaggedPointPositions.push(p.x, p.y, p.z));
 
       const vPoints = generateJaggedLine(
         new THREE.Vector3(-half, 10, i),
@@ -107,7 +108,12 @@ export default function HomePage() {
       );
       const vGeom = new THREE.BufferGeometry().setFromPoints(vPoints);
       scene.add(new THREE.Line(vGeom, jaggedLineMaterial));
+      vPoints.forEach(p => jaggedPointPositions.push(p.x, p.y, p.z));
     }
+
+    const jaggedPointGeom = new THREE.BufferGeometry();
+    jaggedPointGeom.setAttribute('position', new THREE.Float32BufferAttribute(jaggedPointPositions, 3));
+    scene.add(new THREE.Points(jaggedPointGeom, pointMaterial));
 
     const animate = () => {
       requestAnimationFrame(animate);
