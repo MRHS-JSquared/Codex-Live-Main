@@ -8,7 +8,6 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import gsap from 'gsap';
 
 function createRoundTexture(): THREE.Texture {
   const size = 128;
@@ -44,13 +43,16 @@ export default function HomePage() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 
-    // Postprocessing: Bloom
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 3.5, 1.5, 0.05);
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      4.5, // intensity
+      1.5,
+      0.1
+    );
     composer.addPass(bloomPass);
 
-    // Particles
     const texture = createRoundTexture();
     const material = new THREE.PointsMaterial({
       size: 0.5,
@@ -61,8 +63,9 @@ export default function HomePage() {
       color: new THREE.Color('#00bfff'),
     });
 
-    const numPoints = 600;
-    const positions: number[] = [];
+    const numPoints = 800;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(numPoints * 3);
     const basePositions: THREE.Vector3[] = [];
     const currentPositions: THREE.Vector3[] = [];
     const wiggleOffsets: number[] = [];
@@ -74,18 +77,17 @@ export default function HomePage() {
       basePositions.push(new THREE.Vector3(x, y, z));
       currentPositions.push(new THREE.Vector3(x, y, z));
       wiggleOffsets.push(Math.random() * 100);
-      positions.push(x, y, z);
+      positions.set([x, y, z], i * 3);
     }
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const points = new THREE.Points(geometry, material);
     scene.add(points);
 
     const mouse = new THREE.Vector2();
     const raycaster = new THREE.Raycaster();
-    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-    const mouse3D = new THREE.Vector3(0, 0, 0);
+    const attractionPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const mouse3D = new THREE.Vector3();
 
     let pointerActive = false;
 
@@ -95,24 +97,25 @@ export default function HomePage() {
 
       const posAttr = geometry.getAttribute('position');
       for (let i = 0; i < numPoints; i++) {
-        const i3 = i * 3;
         const base = basePositions[i];
         const current = currentPositions[i];
+        const i3 = i * 3;
 
-        // Distance from cursor
-        const dist = current.distanceTo(mouse3D);
+        let offset = new THREE.Vector3();
 
-        // Attraction logic
-        if (pointerActive && dist < 6) {
-          const direction = mouse3D.clone().sub(current).multiplyScalar(0.05);
-          current.add(direction);
-        } else {
-          // Smooth return to base
-          const returnDir = base.clone().sub(current).multiplyScalar(0.02);
-          current.add(returnDir);
+        if (pointerActive) {
+          const dist = base.distanceTo(mouse3D);
+          const radius = 8;
+          if (dist < radius) {
+            const strength = 1 - dist / radius;
+            offset = mouse3D.clone().sub(base).multiplyScalar(0.15 * strength);
+          }
         }
 
-        // Wiggle
+        // Apply smooth return to base + offset
+        current.lerp(base.clone().add(offset), 0.1);
+
+        // Wiggle (y-axis)
         const wiggle = 0.3 * Math.sin(time * 2 + wiggleOffsets[i]);
 
         posAttr.setXYZ(i, current.x, current.y + wiggle, current.z);
@@ -128,7 +131,7 @@ export default function HomePage() {
       mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      raycaster.ray.intersectPlane(plane, mouse3D);
+      raycaster.ray.intersectPlane(attractionPlane, mouse3D);
     };
 
     const onMouseLeave = () => {
