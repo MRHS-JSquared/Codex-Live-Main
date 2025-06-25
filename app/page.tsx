@@ -44,13 +44,13 @@ export default function HomePage() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 
-    // Composer & Bloom
+    // Postprocessing: Bloom
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 3.5, 1.2, 0.1); // strong bloom
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 3.5, 1.5, 0.05);
     composer.addPass(bloomPass);
 
-    // Blue glowing points
+    // Particles
     const texture = createRoundTexture();
     const material = new THREE.PointsMaterial({
       size: 0.5,
@@ -61,20 +61,20 @@ export default function HomePage() {
       color: new THREE.Color('#00bfff'),
     });
 
-    const numPoints = 300;
+    const numPoints = 600;
     const positions: number[] = [];
-    const targets: THREE.Vector3[] = [];
-    const wiggleOffsets: number[] = [];
     const basePositions: THREE.Vector3[] = [];
+    const currentPositions: THREE.Vector3[] = [];
+    const wiggleOffsets: number[] = [];
 
     for (let i = 0; i < numPoints; i++) {
       const x = THREE.MathUtils.randFloatSpread(50);
       const y = THREE.MathUtils.randFloatSpread(30);
       const z = THREE.MathUtils.randFloatSpread(30);
-      positions.push(x, y, z);
-      targets.push(new THREE.Vector3(x, y, z));
       basePositions.push(new THREE.Vector3(x, y, z));
-      wiggleOffsets.push(Math.random() * 100); // unique per point
+      currentPositions.push(new THREE.Vector3(x, y, z));
+      wiggleOffsets.push(Math.random() * 100);
+      positions.push(x, y, z);
     }
 
     const geometry = new THREE.BufferGeometry();
@@ -82,35 +82,40 @@ export default function HomePage() {
     const points = new THREE.Points(geometry, material);
     scene.add(points);
 
-    const mouse = new THREE.Vector2(0, 0);
+    const mouse = new THREE.Vector2();
     const raycaster = new THREE.Raycaster();
     const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-    const mouse3D = new THREE.Vector3();
+    const mouse3D = new THREE.Vector3(0, 0, 0);
 
-    let time = 0;
+    let pointerActive = false;
 
     const animate = () => {
       requestAnimationFrame(animate);
-      time += 0.01;
+      const time = performance.now() * 0.001;
 
       const posAttr = geometry.getAttribute('position');
-
       for (let i = 0; i < numPoints; i++) {
         const i3 = i * 3;
-
-        // wiggle based on time
         const base = basePositions[i];
-        const wiggle = 0.3 * Math.sin(time * 2 + wiggleOffsets[i]);
+        const current = currentPositions[i];
 
-        let pos = new THREE.Vector3(base.x, base.y + wiggle, base.z);
+        // Distance from cursor
+        const dist = current.distanceTo(mouse3D);
 
-        // if near cursor, update base and target position toward it
-        const distToMouse = pos.distanceTo(mouse3D);
-        if (distToMouse < 5) {
-          base.lerp(mouse3D, 0.05);
+        // Attraction logic
+        if (pointerActive && dist < 6) {
+          const direction = mouse3D.clone().sub(current).multiplyScalar(0.05);
+          current.add(direction);
+        } else {
+          // Smooth return to base
+          const returnDir = base.clone().sub(current).multiplyScalar(0.02);
+          current.add(returnDir);
         }
 
-        posAttr.setXYZ(i, base.x, base.y + wiggle, base.z);
+        // Wiggle
+        const wiggle = 0.3 * Math.sin(time * 2 + wiggleOffsets[i]);
+
+        posAttr.setXYZ(i, current.x, current.y + wiggle, current.z);
       }
 
       posAttr.needsUpdate = true;
@@ -119,19 +124,20 @@ export default function HomePage() {
     animate();
 
     const onMouseMove = (e: MouseEvent) => {
+      pointerActive = true;
       mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
       raycaster.ray.intersectPlane(plane, mouse3D);
-      gsap.to(mouse3D, {
-        x: mouse3D.x,
-        y: mouse3D.y,
-        duration: 0.3,
-        ease: 'power2.out',
-      });
+    };
+
+    const onMouseLeave = () => {
+      pointerActive = false;
     };
 
     window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseout', onMouseLeave);
+    window.addEventListener('mouseleave', onMouseLeave);
 
     const onResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -139,11 +145,12 @@ export default function HomePage() {
       renderer.setSize(window.innerWidth, window.innerHeight);
       composer.setSize(window.innerWidth, window.innerHeight);
     };
-
     window.addEventListener('resize', onResize);
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseout', onMouseLeave);
+      window.removeEventListener('mouseleave', onMouseLeave);
       window.removeEventListener('resize', onResize);
     };
   }, []);
@@ -152,13 +159,11 @@ export default function HomePage() {
     <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
       <Navbar />
 
-      {/* 3D Canvas */}
       <canvas
         ref={canvasRef}
         className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
       />
 
-      {/* Foreground content */}
       <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
