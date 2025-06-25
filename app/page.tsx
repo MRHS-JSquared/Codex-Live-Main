@@ -43,16 +43,18 @@ export default function HomePage() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 
+    // Bloom setup
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      4.5, // intensity
+      5.5, // bloom intensity increased
       1.5,
       0.1
     );
     composer.addPass(bloomPass);
 
+    // Point material
     const texture = createRoundTexture();
     const material = new THREE.PointsMaterial({
       size: 0.5,
@@ -108,14 +110,13 @@ export default function HomePage() {
           const radius = 8;
           if (dist < radius) {
             const strength = 1 - dist / radius;
-            offset = mouse3D.clone().sub(base).multiplyScalar(0.15 * strength);
+            offset = mouse3D.clone().sub(base).multiplyScalar(0.5 * strength); // stronger attraction
           }
         }
 
-        // Apply smooth return to base + offset
-        current.lerp(base.clone().add(offset), 0.1);
+        current.lerp(base.clone().add(offset), 0.1); // smooth move to offset position
 
-        // Wiggle (y-axis)
+        // Y-axis wiggle
         const wiggle = 0.3 * Math.sin(time * 2 + wiggleOffsets[i]);
 
         posAttr.setXYZ(i, current.x, current.y + wiggle, current.z);
@@ -139,7 +140,6 @@ export default function HomePage() {
     };
 
     window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseout', onMouseLeave);
     window.addEventListener('mouseleave', onMouseLeave);
 
     const onResize = () => {
@@ -152,7 +152,6 @@ export default function HomePage() {
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseout', onMouseLeave);
       window.removeEventListener('mouseleave', onMouseLeave);
       window.removeEventListener('resize', onResize);
     };
@@ -161,12 +160,10 @@ export default function HomePage() {
   return (
     <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
       <Navbar />
-
       <canvas
         ref={canvasRef}
         className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
       />
-
       <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
