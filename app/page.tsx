@@ -76,7 +76,7 @@ export default function HomePage() {
   
     const bloomPointMaterial = new THREE.PointsMaterial({
       color: '#00ffff',
-      size: 0.05,
+      size: 0.1,
       transparent: true,
       opacity: 1.0,
       depthWrite: false
@@ -104,18 +104,18 @@ export default function HomePage() {
     // Jagged Grid + Glow Points
     const jaggedSpacing = 3;
     const jaggedSegments = 20;
-    const amplitude = 1.5;
-  
+    const amplitude = 0.5;
+    const yElevation = 10;
     for (let i = -half; i <= half; i += jaggedSpacing) {
       const hPoints = generateJaggedLine(
-        new THREE.Vector3(i, 10, -half),
-        new THREE.Vector3(i, 10, half),
+        new THREE.Vector3(i, yElevation, -half),
+        new THREE.Vector3(i, yElevation, half),
         jaggedSegments,
         amplitude
       );
       const vPoints = generateJaggedLine(
-        new THREE.Vector3(-half, 10, i),
-        new THREE.Vector3(half, 10, i),
+        new THREE.Vector3(-half, yElevation, i),
+        new THREE.Vector3(half, yElevation, i),
         jaggedSegments,
         amplitude
       );
