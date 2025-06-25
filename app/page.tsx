@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import gsap from 'gsap';
 
 function createRoundTexture(): THREE.Texture {
   const size = 128;
@@ -28,148 +29,119 @@ function createRoundTexture(): THREE.Texture {
   return texture;
 }
 
-function generateJaggedLine(start: THREE.Vector3, end: THREE.Vector3, segments: number, amplitude: number) {
-  const points = [];
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-    const x = THREE.MathUtils.lerp(start.x, end.x, t);
-    const z = THREE.MathUtils.lerp(start.z, end.z, t);
-    const y = (Math.random() - 0.5) * amplitude;
-    points.push(new THREE.Vector3(x, y, z));
-  }
-  return points;
-}
-
 export default function HomePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-  
+
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog('#000000', 10, 50);
-  
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 5, 15);
-    camera.lookAt(0, 0, 0);
-  
+    camera.position.z = 20;
+
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setClearColor(0x000000, 0);
-  
-    // Post-processing for bloom
+
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.6, 0.0);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.5, 1, 0);
     composer.addPass(bloomPass);
-  
-    const flatGridSize = 30;
-    const flatDivisions = 30;
-    const flatSpacing = flatGridSize / flatDivisions;
-    const half = flatGridSize / 2;
-  
-    const flatLineMaterial = new THREE.LineBasicMaterial({
-      color: new THREE.Color('#00ffff'),
+
+    const texture = createRoundTexture();
+    const material = new THREE.PointsMaterial({
+      size: 0.5,
+      map: texture,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
       transparent: true,
-      opacity: 0.15,
+      color: new THREE.Color('#00bfff'),
     });
-  
-    const jaggedLineMaterial = new THREE.LineBasicMaterial({
-      color: new THREE.Color('#d1d5db'), // Tailwind gray-300
-      transparent: true,
-      opacity: 0.4,
-    });
-  
-    const flatPointMaterial = new THREE.PointsMaterial({
-      color: '#00ffff',
-      size: 0.05,
-      transparent: true,
-      opacity: 1.0,
-      sizeAttenuation: true
-    });
-  
-    const jaggedPointMaterial = new THREE.PointsMaterial({
-      color: '#3b82f6', // Tailwind blue-500
-      size: 0.3,
-      transparent: true,
-      opacity: 1.0,
-      sizeAttenuation: true,
-      depthWrite: false
-    });
-  
-    // Round shape for points
-    jaggedPointMaterial.map = createRoundTexture();
-    jaggedPointMaterial.alphaTest = 0.5;
-    jaggedPointMaterial.transparent = true;
-  
-    const flatPointPositions: number[] = [];
-    const jaggedPointPositions: number[] = [];
-  
-    // Flat Grid + Points
-    for (let i = -half; i <= half; i += flatSpacing) {
-      const hPoints = [new THREE.Vector3(i, 0, -half), new THREE.Vector3(i, 0, half)];
-      const vPoints = [new THREE.Vector3(-half, 0, i), new THREE.Vector3(half, 0, i)];
-      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(hPoints), flatLineMaterial));
-      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(vPoints), flatLineMaterial));
-  
-      for (let j = -half; j <= half; j += flatSpacing) {
-        flatPointPositions.push(i, 0.01, j);
-      }
+
+    const numPoints = 300;
+    const positions: number[] = [];
+    const targets: THREE.Vector3[] = [];
+    const velocities: THREE.Vector3[] = [];
+
+    for (let i = 0; i < numPoints; i++) {
+      const x = THREE.MathUtils.randFloatSpread(50);
+      const y = THREE.MathUtils.randFloatSpread(30);
+      const z = THREE.MathUtils.randFloatSpread(30);
+      positions.push(x, y, z);
+      targets.push(new THREE.Vector3(x, y, z));
+      velocities.push(new THREE.Vector3());
     }
-  
-    const flatPointGeom = new THREE.BufferGeometry();
-    flatPointGeom.setAttribute('position', new THREE.Float32BufferAttribute(flatPointPositions, 3));
-    scene.add(new THREE.Points(flatPointGeom, flatPointMaterial));
-  
-    // Jagged Grid + Glow Points
-    const jaggedSpacing = 3;
-    const jaggedSegments = 20;
-    const amplitude = 0.5;
-    const yElevation = 6; // moved closer to camera
-  
-    for (let i = -half; i <= half; i += jaggedSpacing) {
-      const hPoints = generateJaggedLine(
-        new THREE.Vector3(i, yElevation, -half),
-        new THREE.Vector3(i, yElevation, half),
-        jaggedSegments,
-        amplitude
-      );
-      const vPoints = generateJaggedLine(
-        new THREE.Vector3(-half, yElevation, i),
-        new THREE.Vector3(half, yElevation, i),
-        jaggedSegments,
-        amplitude
-      );
-  
-      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(hPoints), jaggedLineMaterial));
-      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(vPoints), jaggedLineMaterial));
-  
-      hPoints.forEach(p => jaggedPointPositions.push(p.x, p.y, p.z));
-      vPoints.forEach(p => jaggedPointPositions.push(p.x, p.y, p.z));
-    }
-  
-    const jaggedPointGeom = new THREE.BufferGeometry();
-    jaggedPointGeom.setAttribute('position', new THREE.Float32BufferAttribute(jaggedPointPositions, 3));
-    const jaggedPoints = new THREE.Points(jaggedPointGeom, jaggedPointMaterial);
-    scene.add(jaggedPoints);
-  
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const points = new THREE.Points(geometry, material);
+    scene.add(points);
+
+    const mouse = new THREE.Vector2(0, 0);
+    const raycaster = new THREE.Raycaster();
+    const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+    const mouse3D = new THREE.Vector3();
+
     const animate = () => {
       requestAnimationFrame(animate);
+
+      // Update point positions toward target
+      const posAttr = geometry.getAttribute('position');
+      for (let i = 0; i < numPoints; i++) {
+        const i3 = i * 3;
+        const current = new THREE.Vector3(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+        const target = targets[i];
+
+        // Influence by mouse if close enough
+        const dist = current.distanceTo(mouse3D);
+        if (dist < 5) {
+          const dir = new THREE.Vector3().subVectors(mouse3D, current).multiplyScalar(0.2);
+          targets[i] = target.clone().add(dir);
+        }
+
+        velocities[i].add(new THREE.Vector3().subVectors(target, current).multiplyScalar(0.05));
+        velocities[i].multiplyScalar(0.9); // damping
+        current.add(velocities[i]);
+
+        posAttr.setXYZ(i, current.x, current.y, current.z);
+      }
+
+      posAttr.needsUpdate = true;
       composer.render();
     };
+
     animate();
-  
+
+    const onMouseMove = (e: MouseEvent) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      raycaster.ray.intersectPlane(plane, mouse3D);
+      gsap.to(mouse3D, {
+        x: mouse3D.x,
+        y: mouse3D.y,
+        duration: 0.3,
+        ease: 'power2.out',
+      });
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+
     const onResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
       composer.setSize(window.innerWidth, window.innerHeight);
     };
-  
+
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('resize', onResize);
+    };
   }, []);
 
   return (
