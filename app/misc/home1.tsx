@@ -159,11 +159,11 @@ export default function HomePage() {
 
   return (
     <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
+      <Navbar />
       <canvas
         ref={canvasRef}
         className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
       />
-      <Navbar />
       <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
