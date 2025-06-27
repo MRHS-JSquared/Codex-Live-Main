@@ -1,115 +1,75 @@
 'use client';
 
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import * as THREE from 'three';
 import Navbar from '@/components/ui/navbar';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-
-const POINT_COUNT = 900;
+import { Line } from '@react-three/drei';
 
 function NetworkBackground() {
-  const pointsRef = useRef<THREE.Points>(null);
-  const lineRefs = useRef<THREE.Line[]>([]);
-  const { size, mouse, viewport } = useThree();
+  const gridSize = 30;
+  const spacing = 3;
+  const height = 0.8;
 
-  const [positions, segments] = useMemo(() => {
-    const positions: THREE.Vector3[] = [];
-    const segments: [THREE.Vector3, THREE.Vector3][] = [];
-    const radius = 25;
+  const { points, lines } = useMemo(() => {
+    const points: THREE.Vector3[] = [];
+    const lines: [THREE.Vector3, THREE.Vector3][] = [];
 
-    for (let i = 0; i < POINT_COUNT; i++) {
-      const x = (Math.random() - 0.5) * radius * 2;
-      const y = (Math.random() - 0.5) * radius * 1.5;
-      const z = (Math.random() - 0.5) * radius * 2;
-      positions.push(new THREE.Vector3(x, y, z));
-    }
-
-    for (let i = 0; i < positions.length; i++) {
-      for (let j = i + 1; j < positions.length; j++) {
-        if (positions[i].distanceTo(positions[j]) < 3.5) {
-          segments.push([positions[i], positions[j]]);
-        }
+    for (let x = -gridSize; x <= gridSize; x += spacing) {
+      for (let z = -gridSize; z <= gridSize; z += spacing) {
+        const y = Math.sin(x * 0.3) * 0.3 + Math.cos(z * 0.3) * 0.3;
+        const point = new THREE.Vector3(x, y, z);
+        points.push(point);
       }
     }
 
-    return [positions, segments] as const;
+    // connect each point to right and bottom neighbors
+    const rowLen = (gridSize * 2) / spacing + 1;
+    for (let i = 0; i < points.length; i++) {
+      const right = i + 1;
+      const down = i + rowLen;
+      if ((i + 1) % rowLen !== 0) lines.push([points[i], points[right]]);
+      if (down < points.length) lines.push([points[i], points[down]]);
+    }
+
+    return { points, lines };
   }, []);
-
-  const tempV = new THREE.Vector3();
-
-  useFrame(() => {
-    if (!pointsRef.current) return;
-
-    const posAttr = pointsRef.current.geometry.attributes.position as THREE.BufferAttribute;
-    const array = posAttr.array as Float32Array;
-
-    for (let i = 0; i < positions.length; i++) {
-      const base = positions[i];
-      const index = i * 3;
-
-      // Base wiggle
-      const wiggle = Math.sin(performance.now() * 0.001 + i) * 0.05;
-      let x = base.x + wiggle;
-      let y = base.y + wiggle * 0.5;
-      let z = base.z;
-
-      // Cursor influence
-      const pointer = new THREE.Vector3(mouse.x * viewport.width / 2, mouse.y * viewport.height / 2, 0);
-      const dist = pointer.distanceTo(base);
-      if (dist < 5) {
-        const strength = (1 - dist / 5) * 0.2;
-        x += (pointer.x - base.x) * strength;
-        y += (pointer.y - base.y) * strength;
-      }
-
-      array[index] = x;
-      array[index + 1] = y;
-      array[index + 2] = z;
-    }
-
-    posAttr.needsUpdate = true;
-
-    // Update connecting lines
-    lineRefs.current.forEach((line, idx) => {
-      const [a, b] = segments[idx];
-      line.geometry.setFromPoints([a, b]);
-    });
-  });
 
   return (
     <>
-      {/* Glowing Points */}
-      <points ref={pointsRef}>
+      {/* Glowing Nodes */}
+      <points>
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
-            count={positions.length}
-            array={new Float32Array(positions.flatMap(p => p.toArray()))}
+            count={points.length}
+            array={new Float32Array(points.flatMap(p => p.toArray()))}
             itemSize={3}
           />
         </bufferGeometry>
         <pointsMaterial
           color="#00bfff"
-          size={0.18}
+          size={0.25}
           sizeAttenuation
           transparent
           depthWrite={false}
+          blending={THREE.AdditiveBlending}
         />
       </points>
 
       {/* Connecting Lines */}
-      {segments.map(([start, end], index) => (
-        <line key={index} ref={(el: any) => (lineRefs.current[index] = el)}>
-          <bufferGeometry />
-          <lineBasicMaterial
-            color="#00bfff"
-            transparent
-            opacity={0.03}
-          />
-        </line>
+      {lines.map(([start, end], i) => (
+        <Line
+          key={i}
+          points={[start, end]}
+          color="#00bfff"
+          transparent
+          opacity={0.1}
+          lineWidth={1}
+        />
       ))}
     </>
   );
@@ -120,21 +80,20 @@ export default function HomePage() {
     <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
       <Navbar />
 
-      {/* 3D Canvas */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <Canvas
-          camera={{ position: [0, 0, 35], fov: 60 }}
-          gl={{ antialias: true }}
-        >
-          <ambientLight intensity={0.5} />
-          <EffectComposer>
-            <Bloom intensity={2.2} luminanceThreshold={0} luminanceSmoothing={0.9} />
-          </EffectComposer>
-          <NetworkBackground />
-        </Canvas>
-      </div>
+      {/* Glowing Network Canvas */}
+      <Canvas
+        className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
+        camera={{ position: [0, 10, 35], fov: 60 }}
+      >
+        <color attach="background" args={['#000000']} />
+        <ambientLight intensity={0.3} />
+        <NetworkBackground />
+        <EffectComposer>
+          <Bloom intensity={1.6} luminanceThreshold={0} luminanceSmoothing={0.8} />
+        </EffectComposer>
+      </Canvas>
 
-      {/* Foreground content */}
+      {/* Foreground */}
       <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
