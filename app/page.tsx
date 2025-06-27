@@ -69,6 +69,7 @@ function NetworkBackground() {
           transparent
           opacity={0.1}
           lineWidth={1}
+          derivatives={0}
         />
       ))}
     </>
