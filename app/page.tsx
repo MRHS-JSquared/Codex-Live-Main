@@ -1,169 +1,111 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import Navbar from '@/components/ui/navbar';
+import { Canvas } from '@react-three/fiber';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { useMemo, useRef, useEffect } from 'react';
 import * as THREE from 'three';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import Navbar from '@/components/ui/navbar';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
-function createRoundTexture(): THREE.Texture {
-  const size = 128;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-
-  const ctx = canvas.getContext('2d')!;
-  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  gradient.addColorStop(0, 'white');
-  gradient.addColorStop(1, 'transparent');
-
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, size, size);
-
-  const texture = new THREE.Texture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
-
-export default function HomePage() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+function LineSegment({ start, end }: { start: THREE.Vector3; end: THREE.Vector3 }) {
+  const geometryRef = useRef<THREE.BufferGeometry>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (geometryRef.current) {
+      geometryRef.current.setFromPoints([start, end]);
+    }
+  }, [start, end]);
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.z = 20;
+  return (
+    <line>
+      <bufferGeometry ref={geometryRef} />
+      <lineBasicMaterial
+        color="#00bfff"
+        transparent
+        opacity={0.05}
+      />
+    </line>
+  );
+}
 
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+function NetworkBackground() {
+  const { positions, lineSegments } = useMemo(() => {
+    const spacing = 2.5;
+    const size = 20;
+    const grid: THREE.Vector3[][] = [];
+    const positions: THREE.Vector3[] = [];
+    const lineSegments: [THREE.Vector3, THREE.Vector3][] = [];
 
-    // Bloom setup
-    const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
-      5.5, // bloom intensity increased
-      1.5,
-      0.1
-    );
-    composer.addPass(bloomPass);
-
-    // Point material
-    const texture = createRoundTexture();
-    const material = new THREE.PointsMaterial({
-      size: 0.5,
-      map: texture,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      transparent: true,
-      color: new THREE.Color('#00bfff'),
-    });
-
-    const numPoints = 800;
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(numPoints * 3);
-    const basePositions: THREE.Vector3[] = [];
-    const currentPositions: THREE.Vector3[] = [];
-    const wiggleOffsets: number[] = [];
-
-    for (let i = 0; i < numPoints; i++) {
-      const x = THREE.MathUtils.randFloatSpread(50);
-      const y = THREE.MathUtils.randFloatSpread(30);
-      const z = THREE.MathUtils.randFloatSpread(30);
-      basePositions.push(new THREE.Vector3(x, y, z));
-      currentPositions.push(new THREE.Vector3(x, y, z));
-      wiggleOffsets.push(Math.random() * 100);
-      positions.set([x, y, z], i * 3);
+    for (let x = -size; x <= size; x += spacing) {
+      const row: THREE.Vector3[] = [];
+      for (let z = -size; z <= size; z += spacing) {
+        const y = Math.sin(x * 0.2 + z * 0.2) * 0.5;
+        const point = new THREE.Vector3(x, y, z);
+        row.push(point);
+        positions.push(point);
+      }
+      grid.push(row);
     }
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
+    grid.forEach((row, i) => {
+      row.forEach((point, j) => {
+        if (j < row.length - 1) lineSegments.push([point, row[j + 1]]);
+        if (i < grid.length - 1) lineSegments.push([point, grid[i + 1][j]]);
+      });
+    });
 
-    const mouse = new THREE.Vector2();
-    const raycaster = new THREE.Raycaster();
-    const attractionPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
-    const mouse3D = new THREE.Vector3();
-
-    let pointerActive = false;
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      const time = performance.now() * 0.001;
-
-      const posAttr = geometry.getAttribute('position');
-      for (let i = 0; i < numPoints; i++) {
-        const base = basePositions[i];
-        const current = currentPositions[i];
-        const i3 = i * 3;
-
-        let offset = new THREE.Vector3();
-
-        if (pointerActive) {
-          const dist = base.distanceTo(mouse3D);
-          const radius = 8;
-          if (dist < radius) {
-            const strength = 1 - dist / radius;
-            offset = mouse3D.clone().sub(base).multiplyScalar(0.5 * strength); // stronger attraction
-          }
-        }
-
-        current.lerp(base.clone().add(offset), 0.1); // smooth move to offset position
-
-        // Y-axis wiggle
-        const wiggle = 0.3 * Math.sin(time * 2 + wiggleOffsets[i]);
-
-        posAttr.setXYZ(i, current.x, current.y + wiggle, current.z);
-      }
-
-      posAttr.needsUpdate = true;
-      composer.render();
-    };
-    animate();
-
-    const onMouseMove = (e: MouseEvent) => {
-      pointerActive = true;
-      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
-      raycaster.ray.intersectPlane(attractionPlane, mouse3D);
-    };
-
-    const onMouseLeave = () => {
-      pointerActive = false;
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseleave', onMouseLeave);
-
-    const onResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      composer.setSize(window.innerWidth, window.innerHeight);
-    };
-    window.addEventListener('resize', onResize);
-
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseleave', onMouseLeave);
-      window.removeEventListener('resize', onResize);
-    };
+    return { positions, lineSegments };
   }, []);
 
   return (
+    <>
+      {/* Glowing Points */}
+      <points>
+        <bufferGeometry attach="geometry">
+          <bufferAttribute
+            attach="attributes-position"
+            count={positions.length}
+            array={new Float32Array(positions.flatMap(p => p.toArray()))}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial
+          color="#00bfff"
+          size={0.15}
+          sizeAttenuation
+          transparent
+          depthWrite={false}
+        />
+      </points>
+
+      {/* Connecting Lines */}
+      {lineSegments.map(([start, end], index) => (
+        <LineSegment key={index} start={start} end={end} />
+      ))}
+    </>
+  );
+}
+
+export default function HomePage() {
+  return (
     <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
-      <canvas
-        ref={canvasRef}
-        className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
-      />
       <Navbar />
+
+      {/* 3D Canvas */}
+      <Canvas
+        className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
+        camera={{ position: [0, 10, 25], fov: 60 }}
+        gl={{ antialias: true }}
+      >
+        <ambientLight intensity={0.3} />
+        <EffectComposer>
+          <Bloom luminanceThreshold={0} luminanceSmoothing={0.5} intensity={2.2} />
+        </EffectComposer>
+        <NetworkBackground />
+      </Canvas>
+
+      {/* Foreground content */}
       <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}

@@ -182,7 +182,7 @@ export const problems: Problem[] = [
       { input: "This is a sentence", output: "sentence" },
       { input: "One two three", output: "three" },
       { input: "Go go go go", output: "Go" },
-      { input: "Short longish longest", output: "longest" },
+      { input: "Short longish longest", output: "longish" },
       { input: "A bb ccc dddd", output: "dddd" }
     ],
     starterCode: {
