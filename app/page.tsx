@@ -1,68 +1,89 @@
 'use client';
 
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
+import gsap from 'gsap';
 import Navbar from '@/components/ui/navbar';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 
-function LineSegment({ start, end }: { start: THREE.Vector3; end: THREE.Vector3 }) {
-  const geometryRef = useRef<THREE.BufferGeometry>(null);
-
-  useEffect(() => {
-    if (geometryRef.current) {
-      geometryRef.current.setFromPoints([start, end]);
-    }
-  }, [start, end]);
-
-  return (
-    <line>
-      <bufferGeometry ref={geometryRef} />
-      <lineBasicMaterial
-        color="#00bfff"
-        transparent
-        opacity={0.05}
-      />
-    </line>
-  );
-}
+const POINT_COUNT = 800;
 
 function NetworkBackground() {
-  const { positions, lineSegments } = useMemo(() => {
-    const spacing = 2.5;
-    const size = 20;
-    const grid: THREE.Vector3[][] = [];
+  const pointsRef = useRef<THREE.Points>(null);
+  const lineRefs = useRef<THREE.Line[]>([]);
+  const [positions, segments] = useMemo(() => {
     const positions: THREE.Vector3[] = [];
-    const lineSegments: [THREE.Vector3, THREE.Vector3][] = [];
-
-    for (let x = -size; x <= size; x += spacing) {
-      const row: THREE.Vector3[] = [];
-      for (let z = -size; z <= size; z += spacing) {
-        const y = Math.sin(x * 0.2 + z * 0.2) * 0.5;
-        const point = new THREE.Vector3(x, y, z);
-        row.push(point);
-        positions.push(point);
-      }
-      grid.push(row);
+    const segments: [THREE.Vector3, THREE.Vector3][] = [];
+    const size = 20;
+    const gridCount = Math.sqrt(POINT_COUNT);
+    const spacing = (size * 2) / gridCount;
+    
+    // Create grid of points
+    for (let i = 0; i < POINT_COUNT; i++) {
+      const x = Math.random() * size * 2 - size;
+      const z = Math.random() * size * 2 - size;
+      const y = Math.sin(x * 0.1 + z * 0.1) * 1;
+      positions.push(new THREE.Vector3(x, y, z));
     }
+    // Connect close points
+    for (let i = 0; i < positions.length; i++)
+      for (let j = i + 1; j < positions.length; j++) {
+        if (positions[i].distanceTo(positions[j]) < spacing * 1.5)
+          segments.push([positions[i], positions[j]]);
+      }
 
-    grid.forEach((row, i) => {
-      row.forEach((point, j) => {
-        if (j < row.length - 1) lineSegments.push([point, row[j + 1]]);
-        if (i < grid.length - 1) lineSegments.push([point, grid[i + 1][j]]);
-      });
-    });
-
-    return { positions, lineSegments };
+    return [positions, segments] as const;
   }, []);
+
+  const pointer = useThree((t) => t.mouse);
+  const tempV = new THREE.Vector3();
+
+  useFrame(() => {
+    if (!pointsRef.current) return;
+
+    const positionsBuffer = (pointsRef.current.geometry.attributes.position as any).array;
+    for (let i = 0; i < positions.length; i++) {
+      const v = positions[i];
+      const idx = i * 3;
+      
+      // Original position + wiggle
+      const baseX = v.x;
+      const baseY = v.y;
+      const baseZ = v.z;
+      const wiggle = Math.sin(performance.now() * 0.001 + i) * 0.02;
+      let mvX = baseX + wiggle;
+      let mvY = baseY + wiggle * 0.5;
+      let mvZ = baseZ;
+
+      // Attract to mouse
+      tempV.set(pointer.x * window.innerWidth / 50, pointer.y * window.innerHeight / 50, 0);
+      const dist = tempV.distanceTo(v);
+      if (dist < 5) {
+        const strength = (1 - dist / 5) * 0.05;
+        mvX += (pointer.x * window.innerWidth / 100 - v.x) * strength;
+        mvY += (pointer.y * window.innerHeight / 100 - v.y) * strength;
+      }
+
+      positionsBuffer[idx] = mvX;
+      positionsBuffer[idx + 1] = mvY;
+      positionsBuffer[idx + 2] = mvZ;
+    }
+    pointsRef.current.geometry.attributes.position.needsUpdate = true;
+
+    // Update line geometry
+    lineRefs.current.forEach((l, idx) => {
+      const [a, b] = segments[idx];
+      (l.geometry as THREE.BufferGeometry).setFromPoints([a, b]);
+    });
+  });
 
   return (
     <>
-      {/* Glowing Points */}
-      <points>
-        <bufferGeometry attach="geometry">
+      <points ref={pointsRef}>
+        <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
             count={positions.length}
@@ -72,16 +93,25 @@ function NetworkBackground() {
         </bufferGeometry>
         <pointsMaterial
           color="#00bfff"
-          size={0.15}
+          size={0.14}
           sizeAttenuation
           transparent
           depthWrite={false}
         />
       </points>
 
-      {/* Connecting Lines */}
-      {lineSegments.map(([start, end], index) => (
-        <LineSegment key={index} start={start} end={end} />
+      {segments.map((seg, i) => (
+        <line
+          key={i}
+          ref={(el: any) => (lineRefs.current[i] = el)}
+        >
+          <bufferGeometry attach="geometry" />
+          <lineBasicMaterial
+            color="#00bfff"
+            transparent
+            opacity={0.05}
+          />
+        </line>
       ))}
     </>
   );
@@ -92,20 +122,18 @@ export default function HomePage() {
     <main className="relative bg-black text-white min-h-screen flex flex-col overflow-hidden">
       <Navbar />
 
-      {/* 3D Canvas */}
       <Canvas
         className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
         camera={{ position: [0, 10, 25], fov: 60 }}
         gl={{ antialias: true }}
       >
-        <ambientLight intensity={0.3} />
+        <ambientLight intensity={0.5} />
         <EffectComposer>
-          <Bloom luminanceThreshold={0} luminanceSmoothing={0.5} intensity={2.2} />
+          <Bloom intensity={2.0} luminanceThreshold={0} luminanceSmoothing={0.9} />
         </EffectComposer>
         <NetworkBackground />
       </Canvas>
 
-      {/* Foreground content */}
       <section className="relative z-10 flex flex-col items-center justify-center text-center flex-grow px-6 py-20">
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
