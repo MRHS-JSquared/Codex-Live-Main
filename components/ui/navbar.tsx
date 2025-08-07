@@ -71,7 +71,7 @@ export default function Navbar() {
 
         <li>
           <a
-            href="codexinfo.dev"
+            href="https://codexinfo.dev"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 hover:text-white transition"
