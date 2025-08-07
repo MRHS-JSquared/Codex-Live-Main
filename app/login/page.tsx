@@ -28,11 +28,11 @@ export default function LoginPage() {
 
     const success = await login(email, password); // now async
     if (success === "unverified") {
-      setError("Please verify your email");
+      setError("Invalid Credentials (If you have not verified your email please do so)");
     } else if (success === true) {
       router.push("/team");
     } else {
-      setError("Invalid credentials.");
+      setError("Invalid Credentials (If you have not verified your email please do so)");
     }
   };
 
