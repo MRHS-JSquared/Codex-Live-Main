@@ -38,3 +38,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 
 [Site](https://codex-live-main.vercel.app)
 [A](https://py-AI-club.vercel.app)
+[s](https://awesomeappbyyepid.vercel.app/)
